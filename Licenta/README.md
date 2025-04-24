@@ -52,9 +52,10 @@ export default tseslint.config({
   },
 })
 ```
-
+git remote add origin https://github.com/elidiana2002/Licenta.git
+1
 git add .
-git commit -m "new"
+git commit -m "new1"
 git push origin main
 
 
