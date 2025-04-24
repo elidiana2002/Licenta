@@ -3,10 +3,12 @@ import AuthForm from '../components/AuthForm';
 
 const LoginPage = () => {
   return (
-    <AuthLayout>
-      <h2>Autentificare</h2>
-      <AuthForm type="login" />
-    </AuthLayout>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2>Autentificare</h2>
+        <AuthForm type="login" />
+      </div>
+    </div>
   );
 };
 

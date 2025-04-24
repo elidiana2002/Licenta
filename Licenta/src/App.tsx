@@ -4,24 +4,25 @@ import HomePage from './pages/HomePage';
 import CreditScorePage from './pages/CreditScorePage';
 import ClientHistoryPage from './pages/ClientHistoryPage';
 import LoginPage from './pages/LoginPage';
+import './App.css';
 
 function App() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      <Router>
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', zIndex: 1000 }}>
+    <Router>
+      <div className="app-container">
+        <div className="navbar-wrapper">
           <Navbar />
         </div>
-        <div style={{ marginTop: '64px', flex: 1, fontFamily: 'Georgia, serif', fontSize: 'px' }}>
+        <main className="main-content">
           <Routes>
-            <Route path="/" element={<div style={{ marginBottom: '32px' }}><HomePage /></div>} />
-            <Route path="/scor" element={<div style={{ marginBottom: '32px' }}><CreditScorePage /></div>} />
-            <Route path="/istoric" element={<div style={{ marginBottom: '32px' }}><ClientHistoryPage /></div>} />
-            <Route path="/login" element={<div style={{ textAlign: 'right' }}><LoginPage /></div>} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/scor" element={<CreditScorePage />} />
+            <Route path="/istoric" element={<ClientHistoryPage />} />
+            <Route path="/login" element={<LoginPage />} />
           </Routes>
-        </div>
-      </Router>
-    </div>
+        </main>
+      </div>
+    </Router>
   );
 }
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/authService';
 
 interface AuthFormProps {
   type: 'login' | 'register';
@@ -7,10 +8,9 @@ interface AuthFormProps {
 
 const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
   const [formData, setFormData] = useState({
-    nume: '',
-    prenume: '',
+    name: '',
     email: '',
-    parola: '',
+    password: '',
     telefon: ''
   });
   const [error, setError] = useState('');
@@ -24,10 +24,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
     e.preventDefault();
     try {
       if (type === 'login') {
-        await authService.login(formData.email, formData.parola);
+        await authService.login({ email: formData.email, password: formData.password });
         navigate('/dashboard');
       } else {
-        await authService.register(formData);
+        await authService.register({ name: formData.name, email: formData.email, password: formData.password });
         navigate('/login');
       }
     } catch (err) {
@@ -36,45 +36,52 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <input
-        type="text"
-        name="nume"
-        placeholder="Nume"
-        value={formData.nume}
-        onChange={handleChange}
-      />
-      <input
-        type="text"
-        name="prenume"
-        placeholder="Prenume"
-        value={formData.prenume}
-        onChange={handleChange}
-      />
-      <input
-        type="email"
-        name="email"
-        placeholder="Email"
-        value={formData.email}
-        onChange={handleChange}
-      />
-      <input
-        type="password"
-        name="parola"
-        placeholder="Parola"
-        value={formData.parola}
-        onChange={handleChange}
-      />
-      <input
-        type="tel"
-        name="telefon"
-        placeholder="Telefon"
-        value={formData.telefon}
-        onChange={handleChange}
-      />
-      <button type="submit">{type === 'login' ? 'Login' : 'Register'}</button>
-    </form>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h1>{type === 'login' ? 'Intră în cont' : 'Creează un cont'}</h1>
+        <form className="auth-form" onSubmit={handleSubmit}>
+          {error && <div className="error-message">{error}</div>}
+          
+          <input
+            type="text"
+            name="name"
+            placeholder="Nume complet"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+          {type === 'register' && (
+            <input
+              type="tel"
+              name="telefon"
+              placeholder="Telefon"
+              value={formData.telefon}
+              onChange={handleChange}
+              required
+            />
+          )}
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Parolă"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+          <button className="auth-button" type="submit">
+            {type === 'login' ? 'Intră în cont' : 'Creează cont'}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 };
 

@@ -54,7 +54,7 @@ export default tseslint.config({
 ```
 
 git add .
-git commit -m "Merge remote and local"
+git commit -m "new"
 git push origin main
 
 

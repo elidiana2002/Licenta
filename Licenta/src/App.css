@@ -1,48 +1,162 @@
+:root {
+  --primary-color: #f9e071;
+  --primary-dark: #e6c95e;
+  --error-color: #e74c3c;
+}
+
 body {
   font-family: 'Roboto', sans-serif;
-  background-color: #000; /* Fundal negru */
-  color: var(--primary-color); /* Text galben */
+  background-color: #fffef8;
+  color: #2a2a2a;
   margin: 0;
   padding: 0;
-}
-
-.navbar {
-  background-color: var(--primary-color); /* Navbar galben */
-  padding: 1rem 2rem;
-  color: #000;
-  font-weight: 600;
+  padding-top: 100px; /* Spațiu pentru navbar fix */
+  min-height: 100vh;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  flex-direction: column;
 }
 
-.navbar a {
-  color: #000; /* Link-uri negre pe fundal galben */
-  text-decoration: none;
-  margin-left: 1rem;
-  font-weight: 500;
-}
-
-.navbar a:hover {
-  text-decoration: underline;
-}
-
-a, h1, h2, h3, p {
-  color: var(--primary-color);
-}
-
-button {
-  background-color: var(--primary-color);
-  color: #000;
-}
-
-
-
+/* Resetări link-uri */
 a {
-  color: var(--primary-color);
+  color: inherit;
+  text-decoration: none;
 }
 
 a:hover {
-  text-decoration: underline;
+  text-decoration: none;
+}
+
+/* Container principal */
+#root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Stiluri specifice pentru paginile de autentificare */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  flex: 1;
+}
+
+.auth-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.auth-card h2 {
+  color: var(--primary-color);
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+}
+
+
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.auth-form input {
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 18px;
+  transition: all 0.3s ease;
+  background-color: #2a2a2a;
+  color: white;
+}
+
+.auth-form input::placeholder {
+  color: #ccc;
+}
+
+.auth-form input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(249, 224, 113, 0.3);
+  outline: none;
+}
+
+.auth-button {
+  background-color: var(--primary-color);
+  color: #333;
+  font-weight: bold;
+  font-size: 18px;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.auth-button:hover {
+  background-color: var(--primary-dark);
+  transform: scale(1.03);
+}
+
+.error-message {
+  background-color: #fdecea;
+  color: var(--error-color);
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 16px;
+  margin-bottom: 1rem;
+}
+
+.auth-switch {
+  margin-top: 1.5rem;
+  font-size: 16px;
+}
+
+.auth-switch a {
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.navbar-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+.main-content {
+  margin-top: 64px;
+  flex: 1;
+  font-family: Georgia, serif;
+  padding: 0 16px;
+}
+
+@media (max-width: 768px) {
+  .auth-card {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+  
+  .auth-card h2 {
+    font-size: 1.5rem;
+  }
+  
+  .auth-form input {
+    padding: 12px;
+    font-size: 16px;
+  }
 }
