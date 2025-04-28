@@ -1,0 +1,62 @@
+.credit-score-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    margin-top: 2rem;
+  }
+  
+  .credit-score-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .credit-score-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .credit-score-form input {
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 18px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  
+  .credit-score-form input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(249, 224, 113, 0.3);
+    outline: none;
+  }
+  
+  .credit-score-button {
+    background-color: var(--primary-color);
+    color: #333;
+    font-weight: bold;
+    font-size: 18px;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
+  }
+  
+  .credit-score-button:hover {
+    background-color: var(--primary-dark);
+    transform: scale(1.03);
+  }
+  
+  .credit-score-result {
+    margin-top: 2rem;
+    font-size: 24px;
+    color: #2a2a2a;
+  }
+  

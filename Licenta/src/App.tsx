@@ -1,28 +1,31 @@
+// src/App.tsx
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
 import CreditScorePage from './pages/CreditScorePage';
 import ClientHistoryPage from './pages/ClientHistoryPage';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import './App.css';
 
 function App() {
   return (
-    <Router>
-      <div className="app-container">
+    <div className="app-container">
+      <Router>
         <div className="navbar-wrapper">
           <Navbar />
         </div>
-        <main className="main-content">
+        <div className="main-content">
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/scor" element={<CreditScorePage />} />
             <Route path="/istoric" element={<ClientHistoryPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
           </Routes>
-        </main>
-      </div>
-    </Router>
+        </div>
+      </Router>
+    </div>
   );
 }
 

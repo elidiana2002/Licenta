@@ -1,12 +1,21 @@
-import AuthLayout from '../components/AuthLayout';
-import AuthForm from '../components/AuthForm';
+//import AuthLayout from '../components/AuthLayout';
+import { Link } from "react-router-dom";
+import "../App.css"; // sau un fișier separat dacă vrei
 
 const LoginPage = () => {
   return (
-    <div className="auth-container">
-      <div className="auth-card">
+    <div className="page-container">
+      <div className="card">
         <h2>Autentificare</h2>
-        <AuthForm type="login" />
+        <form>
+          <input type="email" placeholder="Email" required /><br /><br />
+          <input type="password" placeholder="Parolă" required /><br /><br />
+          <button type="submit">Intră în cont</button>
+        </form>
+
+        <div className="redirect">
+          Nu ai cont? <Link to="/register">Crează unul</Link>
+        </div>
       </div>
     </div>
   );

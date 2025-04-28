@@ -1,9 +1,11 @@
+/*src\App.css*/
 :root {
   --primary-color: #f9e071;
   --primary-dark: #e6c95e;
   --error-color: #e74c3c;
 }
 
+/* Stil general */
 body {
   font-family: 'Roboto', sans-serif;
   background-color: #fffef8;
@@ -16,7 +18,7 @@ body {
   flex-direction: column;
 }
 
-/* Resetări link-uri */
+/* Resetare link-uri */
 a {
   color: inherit;
   text-decoration: none;
@@ -26,41 +28,45 @@ a:hover {
   text-decoration: none;
 }
 
-/* Container principal */
-#root {
+/* Structură principală */
+#root, .app-container {
   flex: 1;
   display: flex;
   flex-direction: column;
   width: 100%;
+  min-height: 100vh;
 }
 
-/* Stiluri specifice pentru paginile de autentificare */
-.auth-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
+/* Navbar fix */
+.navbar-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+/* Conținut principal */
+.main-content {
+  /*margin-top: 64px;*/
   flex: 1;
+  font-family: 'Georgia', serif;
+  padding: 1rem;
 }
 
-.auth-card {
+/* Card general (folosit și la autentificare și la alte pagini) */
+.auth-card, .general-card {
   background: white;
   padding: 2rem;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   text-align: center;
+  margin: 2rem auto;
 }
 
-.auth-card h2 {
-  color: var(--primary-color);
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-}
-
-
-
+/* Formulare */
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -72,9 +78,9 @@ a:hover {
   border: 1px solid #ddd;
   border-radius: 10px;
   font-size: 18px;
-  transition: all 0.3s ease;
   background-color: #2a2a2a;
   color: white;
+  transition: all 0.3s ease;
 }
 
 .auth-form input::placeholder {
@@ -87,7 +93,8 @@ a:hover {
   outline: none;
 }
 
-.auth-button {
+/* Buton general */
+.auth-button, .general-button {
   background-color: var(--primary-color);
   color: #333;
   font-weight: bold;
@@ -99,11 +106,12 @@ a:hover {
   transition: all 0.3s ease;
 }
 
-.auth-button:hover {
+.auth-button:hover, .general-button:hover {
   background-color: var(--primary-dark);
   transform: scale(1.03);
 }
 
+/* Mesaje de eroare */
 .error-message {
   background-color: #fdecea;
   color: var(--error-color);
@@ -113,6 +121,7 @@ a:hover {
   margin-bottom: 1rem;
 }
 
+/* Schimbare pagină (ex: login/signup) */
 .auth-switch {
   margin-top: 1.5rem;
   font-size: 16px;
@@ -123,40 +132,131 @@ a:hover {
   font-weight: bold;
 }
 
-
-.app-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-.navbar-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 1000;
-}
-
-.main-content {
-  margin-top: 64px;
-  flex: 1;
-  font-family: Georgia, serif;
-  padding: 0 16px;
-}
-
+/* Responsive */
 @media (max-width: 768px) {
-  .auth-card {
+  .auth-card, .general-card {
     padding: 1.5rem;
     margin: 1rem;
   }
-  
-  .auth-card h2 {
-    font-size: 1.5rem;
-  }
-  
-  .auth-form input {
-    padding: 12px;
+
+  .auth-form input,
+  .auth-button,
+  .general-button {
     font-size: 16px;
+    padding: 14px;
   }
+}
+
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh; /* Ocupă toată înălțimea paginii */
+  background-color: #fffef7; /* Fundalul tău crem */
+}
+
+.page-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 150px);
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+}
+
+.score-display {
+  margin-top: 2rem;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+}
+
+.score-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #2a2a2a;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.score-label {
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.page-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.card {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 1.5rem;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.card h2 {
+  margin-bottom: 1.5rem;
+  color: #333333;
+}
+
+form input {
+  width: 90%;
+  padding: 0.8rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 1rem;
+  font-size: 1rem;
+}
+
+form button {
+  width: 95%;
+  padding: 0.9rem;
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+form button:hover {
+  background-color: var(--primary-dark);
+}
+
+.redirect {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.redirect a {
+  color: #f9a825;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.redirect a:hover {
+  text-decoration: underline;
 }
