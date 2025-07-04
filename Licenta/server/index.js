@@ -2,19 +2,22 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mysql from 'mysql2';
+import authRouter from './routes/auth.js';
 
 dotenv.config();
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3001;
+
 
 app.use(cors());
 app.use(express.json());
+app.use('/api/auth', authRouter);
 
 const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'banca'
 });
 
 db.connect(err => {
