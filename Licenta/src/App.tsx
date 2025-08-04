@@ -7,6 +7,7 @@ import ClientHistoryPage from './pages/ClientHistoryPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
+import CarduriPage from './pages/CarduriPage';
 import './App.css';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/account" element={<ProfilePage />} />
+            <Route path="/carduri" element={<CarduriPage />} />
           </Routes>
         </div>
       </Router>

@@ -31,7 +31,8 @@ const Navbar = () => {
           {dropdownOpen && (
             <div className="profile-dropdown">
               <Link to="/account" className="dropdown-item">Profil</Link>
-              <Link to="/settings" className="dropdown-item">Setări</Link>
+              {/* <Link to="/settings" className="dropdown-item">Setări</Link> */}
+              <Link to="/carduri" className="dropdown-item">Carduri</Link>
               <button className="dropdown-item logout-btn" onClick={handleLogout}>Logout</button>
             </div>
           )}

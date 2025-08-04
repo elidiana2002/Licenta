@@ -1,18 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ClientHistoryPage.css';
-
-const transactionsMock = [
-  { id: 1, type: 'Împrumut', amount: 5000, date: '2025-04-01' },
-  { id: 2, type: 'Rambursare', amount: 1000, date: '2025-04-10' },
-  { id: 3, type: 'Împrumut', amount: 3000, date: '2025-04-15' },
-];
 
 const ClientHistoryPage = () => {
   const [filter, setFilter] = useState('Toate');
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Presupunem că emailul clientului este stocat în localStorage după login
+        const email = localStorage.getItem('userEmail');
+        if (!email) {
+          setError('Nu există email de utilizator!');
+          setLoading(false);
+          return;
+        }
+        const response = await fetch('http://localhost/licenta/api/getClientByEmail.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await response.json();
+        if (data.success) {
+          setTransactions(data.istoric || []);
+        } else {
+          setError(data.error || 'Eroare la preluarea tranzacțiilor');
+        }
+      } catch (err) {
+        setError('Eroare la conectarea cu serverul');
+      }
+      setLoading(false);
+    };
+    fetchTransactions();
+  }, []);
 
   const filteredTransactions = filter === 'Toate'
-    ? transactionsMock
-    : transactionsMock.filter((t) => t.type === filter);
+    ? transactions
+    : transactions.filter((t) => t.tip === filter);
 
   return (
     <div className="history-container">
@@ -25,15 +53,21 @@ const ClientHistoryPage = () => {
           <option value="Rambursare">Rambursare</option>
         </select>
       </div>
-      <ul className="transaction-list">
-        {filteredTransactions.map((t) => (
-          <li key={t.id} className="transaction-item">
-            <span>{t.date}</span>
-            <span>{t.type}</span>
-            <span>{t.amount} RON</span>
-          </li>
-        ))}
-      </ul>
+      {loading ? (
+        <p>Se încarcă...</p>
+      ) : error ? (
+        <p style={{ color: 'red' }}>{error}</p>
+      ) : (
+        <ul className="transaction-list">
+          {filteredTransactions.map((t) => (
+            <li key={t.id} className="transaction-item">
+              <span>{t.data_tranzactie}</span>
+              <span>{t.tip}</span>
+              <span>{t.suma} RON</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };
