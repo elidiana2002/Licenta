@@ -43,19 +43,11 @@ try {
         exit;
     }
 
-    // 3. Verifică dacă email-ul există deja în users
-    $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
-    $stmt->execute([$data['email']]);
-    if ($stmt->rowCount() > 0) {
-        echo json_encode(['error' => 'Există deja un user cu acest email!']);
-        exit;
-    }
-
     // Hash parola
     $password_hash = password_hash($data['password'], PASSWORD_BCRYPT);
 
-    // 4. Creează clientul
-    $stmt = $conn->prepare("INSERT INTO clients (first_name, last_name, email, password_hash, CNP, address, phone) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    // 3. Creează clientul cu toate informațiile
+    $stmt = $conn->prepare("INSERT INTO clients (first_name, last_name, email, password_hash, CNP, address, phone, role) VALUES (?, ?, ?, ?, ?, ?, ?, 'user')");
     $stmt->execute([
         $data['first_name'],
         $data['last_name'],
@@ -64,13 +56,6 @@ try {
         $data['CNP'],
         $data['address'],
         $data['phone']
-    ]);
-
-    // 5. Creează user-ul pentru login
-    $stmt2 = $conn->prepare("INSERT INTO users (email, password_hash, role) VALUES (?, ?, 'user')");
-    $stmt2->execute([
-        $data['email'],
-        $password_hash
     ]);
 
     echo json_encode(['success' => true]);

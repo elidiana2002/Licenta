@@ -2,34 +2,40 @@
 CREATE DATABASE IF NOT EXISTS banca;
 USE banca;
 
--- Creare tabel users dacă nu există
-CREATE TABLE IF NOT EXISTS users (
+-- Creare tabel clients (combinat cu users)
+CREATE TABLE IF NOT EXISTS clients (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    CNP VARCHAR(13),
+    address TEXT,
+    phone VARCHAR(20),
     role ENUM('admin', 'user', 'manager') NOT NULL DEFAULT 'user',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- Inserare utilizatori de test (doar dacă nu există deja)
-INSERT IGNORE INTO users (email, password, role) VALUES
-('admin@test.com', 'admin123', 'admin'),
-('user@test.com', 'user123', 'user'),
-('manager@test.com', 'manager123', 'manager');
-
--- Adăugare câmp role dacă nu există
-ALTER TABLE users 
-ADD COLUMN IF NOT EXISTS role ENUM('admin', 'user', 'manager') NOT NULL DEFAULT 'user';
-
--- Actualizare roluri pentru utilizatorii existenți
-UPDATE users SET role = 'admin' WHERE email = 'admin@test.com';
-UPDATE users SET role = 'user' WHERE email = 'user@test.com';
-UPDATE users SET role = 'manager' WHERE email = 'manager@test.com'; 
 
 CREATE TABLE banks (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL
 );
+
+-- Inserare banci de test cu UPDATE dacă există
+INSERT INTO banks (id, name) VALUES
+(1, 'Banca Transilvania'),
+(2, 'BCR (Banca Comercială Română)'),
+(3, 'BRD – Groupe Société Générale'),
+(4, 'CEC Bank'),
+(5, 'Raiffeisen Bank'),
+(6, 'ING Bank România'),
+(7, 'UniCredit Bank'),
+(8, 'OTP Bank'),
+(9, 'Alpha Bank România'),
+(10, 'ProCredit Bank')
+ON DUPLICATE KEY UPDATE 
+    name = VALUES(name);
+
 CREATE TABLE accounts (
   id INT AUTO_INCREMENT PRIMARY KEY,
   client_id INT NOT NULL,
@@ -42,6 +48,7 @@ CREATE TABLE accounts (
   FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
   FOREIGN KEY (bank_id) REFERENCES banks(id) ON DELETE CASCADE
 );
+
 CREATE TABLE cards (
   id INT AUTO_INCREMENT PRIMARY KEY,
   account_id INT NOT NULL,
@@ -51,8 +58,13 @@ CREATE TABLE cards (
   status ENUM('active', 'blocked', 'expired') DEFAULT 'active',
   card_type ENUM('debit', 'credit', 'virtual') DEFAULT 'debit',
   issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+  bank_id INT,
+  iban VARCHAR(34),
+  currency ENUM('RON', 'EUR', 'USD') DEFAULT 'RON',
+  FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
+  FOREIGN KEY (bank_id) REFERENCES banks(id) ON DELETE SET NULL
 );
+
 CREATE TABLE transactions (
   id INT AUTO_INCREMENT PRIMARY KEY,
   card_id INT NOT NULL,
@@ -64,6 +76,7 @@ CREATE TABLE transactions (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE
 );
+
 CREATE TABLE history (
   id INT AUTO_INCREMENT PRIMARY KEY,
   client_id INT,

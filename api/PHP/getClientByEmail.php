@@ -25,6 +25,7 @@ try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
+    // Caută clientul direct în tabela clients (care conține toate informațiile)
     $stmt = $conn->prepare("SELECT id, first_name, last_name, email, address, phone, role FROM clients WHERE email = ?");
     $stmt->execute([$data['email']]);
     $client = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -36,7 +37,6 @@ try {
         $istoric = $stmt2->fetchAll(PDO::FETCH_ASSOC);
         
         echo json_encode(['success' => true, 'client' => $client, 'istoric' => $istoric]);
-        $serverMsg = '';
     } else {
         echo json_encode(['error' => 'Clientul nu a fost găsit!']);
     }

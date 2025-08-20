@@ -25,8 +25,8 @@ try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Selectează toate cardurile pentru client (join accounts + cards + banks)
-    $stmt = $conn->prepare("SELECT cards.id, cards.account_id, cards.card_number, cards.expiration_date, cards.cvv, cards.status, cards.card_type, cards.issued_at, accounts.iban, accounts.currency, accounts.bank_id, banks.name AS bank_name FROM cards INNER JOIN accounts ON cards.account_id = accounts.id INNER JOIN banks ON accounts.bank_id = banks.id WHERE accounts.client_id = ?");
+    // Selectează toate cardurile pentru client (join accounts + cards)
+    $stmt = $conn->prepare("SELECT cards.id, cards.account_id, cards.card_number, cards.expiration_date, cards.cvv, cards.status, cards.card_type, cards.issued_at, cards.bank_id, cards.iban, cards.currency FROM cards INNER JOIN accounts ON cards.account_id = accounts.id WHERE accounts.client_id = ?");
     $stmt->execute([$data['client_id']]);
     $cards = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
