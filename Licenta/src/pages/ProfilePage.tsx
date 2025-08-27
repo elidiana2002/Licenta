@@ -43,7 +43,7 @@ const ProfilePage: React.FC = () => {
         setUser(parsedUser);
         if (parsedUser.role === 'user') {
           try {
-            const res = await axios.post<GetClientResponse>('http://localhost/api/getClientByEmail.php', {
+                         const res = await axios.post<GetClientResponse>('http://localhost/api/getClientByEmail.php', {
               email: parsedUser.email,
             });
             if (res.data.success && res.data.client) {
@@ -108,7 +108,7 @@ const ProfilePage: React.FC = () => {
         phone: formData.phone,
         password: formData.password, // poate fi gol
       };
-      const res = await axios.post('http://localhost/api/updateClientProfile.php', payload);
+              const res = await axios.post('http://localhost/api/updateClientProfile.php', payload);
       const data = res.data as { success?: boolean; error?: string };
       if (data.success) {
         setClient({ ...client, ...payload }); // 'password' nu există în Client, deci nu îl includem
@@ -187,7 +187,15 @@ const ProfilePage: React.FC = () => {
             </div>
             <div style={{ marginBottom: 12 }}>
               <label>Telefon:<br />
-                <input name="phone" value={formData.phone} onChange={handleInputChange} />
+                <input 
+                  name="phone" 
+                  type="tel"
+                  value={formData.phone} 
+                  onChange={handleInputChange} 
+                  placeholder="Ex: +40722123456 sau 0722123456"
+                  maxLength={20}
+                  inputMode="tel"
+                />
               </label>
             </div>
             <div style={{ marginBottom: 12 }}>

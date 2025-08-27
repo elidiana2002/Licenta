@@ -67,14 +67,19 @@ CREATE TABLE cards (
 
 CREATE TABLE transactions (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  card_id INT NOT NULL,
+  account_id INT NOT NULL,
+  destination_account_id INT,
   amount DECIMAL(15,2) NOT NULL,
-  status ENUM('accepted', 'rejected', 'returned', 'pending') DEFAULT 'pending',
-  transaction_type ENUM('payment', 'withdrawal', 'deposit', 'transfer'),
+  currency ENUM('RON', 'EUR', 'USD') DEFAULT 'RON',
+  status ENUM('completed', 'pending', 'rejected') DEFAULT 'pending',
+  transaction_type ENUM('payment', 'withdrawal', 'deposit', 'transfer') DEFAULT 'transfer',
+  method ENUM('POS', 'ATM', 'Online', 'IBAN', 'phone') DEFAULT 'Online',
   category ENUM('shopping', 'utilities', 'salary', 'other') DEFAULT 'other',
   description VARCHAR(255),
+  balance_after DECIMAL(15,2),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE
+  FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
+  FOREIGN KEY (destination_account_id) REFERENCES accounts(id) ON DELETE SET NULL
 );
 
 CREATE TABLE history (

@@ -9,7 +9,7 @@ error_reporting(E_ALL);
 
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, Cache-Control, Pragma');
 header('Content-Type: application/json');
 
 // Debug: să vedem dacă headers sunt setate
@@ -44,6 +44,15 @@ function decryptData($encryptedData) {
         error_log('Decryption error: ' . $e->getMessage());
         return $encryptedData; // Returnează original în caz de eroare
     }
+}
+
+// Funcție pentru generarea unui IBAN random
+function generateRandomIBAN() {
+    $countryCode = 'RO';
+    $checkDigits = str_pad(rand(10, 99), 2, '0', STR_PAD_LEFT);
+    $bankCode = 'BANK';
+    $accountNumber = strtoupper(substr(md5(uniqid() . rand(1000, 9999)), 0, 16));
+    return $countryCode . $checkDigits . $bankCode . $accountNumber;
 }
 
 $data = json_decode(file_get_contents('php://input'), true);
@@ -98,9 +107,10 @@ if (strlen($card_number_clean) < 16 || strlen($card_number_clean) > 32) {
     exit;
 }
 
-// Validare data expirării (MM/YY)
-if (!preg_match('/^\d{2}\/\d{2}$/', $expiration_date_decrypted)) {
-    echo json_encode(['error' => 'Data expirării trebuie să fie în format MM/YY.']);
+// Validare data expirării (poate fi MM/YY sau YYYY-MM-DD)
+if (!preg_match('/^\d{2}\/\d{2}$/', $expiration_date_decrypted) && 
+    !preg_match('/^\d{4}-\d{2}-\d{2}$/', $expiration_date_decrypted)) {
+    echo json_encode(['error' => 'Data expirării trebuie să fie în format MM/YY sau YYYY-MM-DD.']);
     exit;
 }
 
@@ -116,11 +126,19 @@ if (!isset($data['bank_id']) || empty($data['bank_id']) || $data['bank_id'] === 
     exit;
 }
 
-// Convertim data MM/YY -> YYYY-MM-DD (prima zi din luna)
-$expiration_parts = explode('/', $expiration_date_decrypted);
-$month = $expiration_parts[0];
-$year = '20' . $expiration_parts[1];
-$expiration_date = $year . '-' . $month . '-01';
+// Data vine deja formatată ca YYYY-MM-DD (ultima zi din lună) din frontend
+// Dacă vine în format MM/YY, o convertim la ultima zi din lună
+if (preg_match('/^\d{2}\/\d{2}$/', $expiration_date_decrypted)) {
+    // Format MM/YY - convertim la ultima zi din lună
+    $expiration_parts = explode('/', $expiration_date_decrypted);
+    $month = $expiration_parts[0];
+    $year = '20' . $expiration_parts[1];
+    $lastDayOfMonth = date('t', mktime(0, 0, 0, $month, 1, $year));
+    $expiration_date = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-' . $lastDayOfMonth;
+} else {
+    // Data vine deja formatată ca YYYY-MM-DD
+    $expiration_date = $expiration_date_decrypted;
+}
 
 try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
@@ -137,53 +155,12 @@ try {
         exit;
     }
 
-    $bank_name = $bank_data['name']; // Numele băncii pentru log/afișare
-
     // Verificăm dacă clientul există
     $stmt = $conn->prepare("SELECT id FROM clients WHERE id = ?");
     $stmt->execute([$data['client_id']]);
     if ($stmt->rowCount() == 0) {
         echo json_encode(['error' => 'Clientul nu există!']);
         exit;
-    }
-
-    // Dacă nu avem account_id, creăm un cont nou
-    if (!isset($data['account_id'])) {
-        $bank_id = $data['bank_id'] ?? 1; // Default la Banca Transilvania (ID: 1)
-        $stmt = $conn->prepare("SELECT id FROM banks WHERE id = ?");
-        $stmt->execute([$bank_id]);
-        $bank_result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if (!$bank_result) {
-            echo json_encode(['error' => 'Banca selectată nu există!']);
-            exit;
-        }
-        
-        // Generăm un IBAN unic
-        $iban = 'RO' . rand(10, 99) . 'BANK' . strtoupper(substr(md5(uniqid()), 0, 16));
-        
-        $stmt = $conn->prepare("INSERT INTO accounts (client_id, bank_id, iban, currency, account_type) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([
-            $data['client_id'],
-            $bank_id,
-            $iban,
-            $data['currency'] ?? 'RON',
-            $data['account_type'] ?? 'current'
-        ]);
-        $account_id = $conn->lastInsertId();
-        
-        // Logăm crearea contului nou
-        $stmt = $conn->prepare("INSERT INTO history (client_id, account_id, field_changed, old_value, new_value, changed_by) VALUES (?, ?, 'account_created', 'N/A', ?, 'system')");
-        $stmt->execute([$data['client_id'], $account_id, "Cont nou creat cu IBAN: $iban"]);
-        
-    } else {
-        $account_id = $data['account_id'];
-        $stmt = $conn->prepare("SELECT id FROM accounts WHERE id = ? AND client_id = ?");
-        $stmt->execute([$account_id, $data['client_id']]);
-        if ($stmt->rowCount() == 0) {
-            echo json_encode(['error' => 'Contul nu aparține acestui client!']);
-            exit;
-        }
     }
 
     // Verificăm dacă numărul de card există deja
@@ -194,29 +171,48 @@ try {
         exit;
     }
 
-    // Obținem IBAN-ul contului
-    $stmt = $conn->prepare("SELECT iban FROM accounts WHERE id = ?");
-    $stmt->execute([$account_id]);
-    $account_data = $stmt->fetch(PDO::FETCH_ASSOC);
-    $account_iban = $account_data['iban'];
+    // Generăm un IBAN random unic
+    $iban = generateRandomIBAN();
+    
+    // Verificăm dacă IBAN-ul există deja (foarte puțin probabil, dar să fim siguri)
+    $stmt = $conn->prepare("SELECT id FROM accounts WHERE iban = ?");
+    $stmt->execute([$iban]);
+    while ($stmt->rowCount() > 0) {
+        $iban = generateRandomIBAN();
+        $stmt->execute([$iban]);
+    }
 
-    // Inserăm cardul
-    $stmt = $conn->prepare("INSERT INTO cards (account_id, card_number, expiration_date, cvv, card_type, bank_id, iban, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    // Creăm account-ul nou (fără card_id pentru moment)
+    $stmt = $conn->prepare("INSERT INTO accounts (client_id, bank_id, iban, currency, account_type, balance) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->execute([
+        $data['client_id'],
+        $bank_id,
+        $iban,
+        $data['currency'] ?? 'RON',
+        $data['account_type'] ?? 'current',
+        0.00 // Balance inițial 0
+    ]);
+    $account_id = $conn->lastInsertId();
+
+    // Creăm cardul nou cu account_id
+    $stmt = $conn->prepare("INSERT INTO cards (account_id, card_number, expiration_date, cvv, card_type, status, issued_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
     $stmt->execute([
         $account_id,
         $card_number_clean,
         $expiration_date,
         $cvv_decrypted,
         $data['card_type'] ?? 'debit',
-        $bank_id, // Folosim bank_id validat
-        $account_iban,
-        $data['currency'] ?? 'RON'
+        $data['status'] ?? 'active'
     ]);
-
-    // Logăm crearea cardului
     $card_id = $conn->lastInsertId();
+
+    // Actualizăm account-ul să conțină card_id
+    $stmt = $conn->prepare("UPDATE accounts SET card_id = ? WHERE id = ?");
+    $stmt->execute([$card_id, $account_id]);
+
+    // Logăm crearea cardului și account-ului
     $stmt = $conn->prepare("INSERT INTO history (client_id, account_id, field_changed, old_value, new_value, changed_by) VALUES (?, ?, 'card_created', 'N/A', ?, 'system')");
-    $stmt->execute([$data['client_id'], $account_id, "Card nou creat cu ID: $card_id pentru banca cu ID: $bank_id"]);
+    $stmt->execute([$data['client_id'], $account_id, "Card nou creat cu ID: $card_id și account cu IBAN: $iban"]);
 
     // Debug: să vedem dacă ajungem aici
     error_log('About to send success response');
@@ -225,7 +221,7 @@ try {
         'success' => true, 
         'account_id' => $account_id,
         'card_id' => $card_id,
-        'message' => 'Cardul a fost creat cu succes!'
+        'message' => 'Cardul și account-ul au fost create cu succes!'
     ]);
     
     // Debug: să vedem dacă răspunsul a fost trimis

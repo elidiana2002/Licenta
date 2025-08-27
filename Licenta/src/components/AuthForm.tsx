@@ -54,10 +54,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
             <input
               type="tel"
               name="telefon"
-              placeholder="Telefon"
+              placeholder="Telefon (ex: +40722123456 sau 0722123456)"
               value={formData.telefon}
               onChange={handleChange}
               required
+              maxLength={20}
+              inputMode="tel"
             />
           )}
           <input

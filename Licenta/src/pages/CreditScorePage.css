@@ -24,18 +24,26 @@
   }
   
   .credit-score-form input {
-    padding: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    font-size: 18px;
-    transition: border-color 0.3s, box-shadow 0.3s;
-  }
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 18px;
+  background-color: #23232b;
+  color: #fff !important;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
   
   .credit-score-form input:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(249, 224, 113, 0.3);
-    outline: none;
-  }
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(249, 224, 113, 0.3);
+  outline: none;
+  background-color: #23232b;
+  color: #fff !important;
+}
+
+.credit-score-form input::placeholder {
+  color: #ccc;
+}
   
   .credit-score-button {
     background-color: var(--primary-color);

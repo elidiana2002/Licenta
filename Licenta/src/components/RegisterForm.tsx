@@ -55,22 +55,45 @@ const RegisterForm = () => {
       if (!emailRegex.test(value)) error = 'Adresa de email nu este validă';
     }
     if (name === 'CNP') {
-      if (!/^\d{13}$/.test(value)) error = 'CNP-ul trebuie să aibă 13 cifre';
+      if (!/^\d{13}$/.test(value)) error = 'CNP-ul trebuie să aibă exact 13 cifre';
     }
     if (name === 'phone') {
-      if (!/^\d{10}$/.test(value)) error = 'Telefonul trebuie să aibă 10 cifre';
+      // Permite format internațional: +40, +44, etc. + numărul
+      const phoneRegex = /^(\+\d{1,4})?(\d{7,15})$/;
+      if (!phoneRegex.test(value)) error = 'Telefonul trebuie să aibă format valid (ex: +40722123456 sau 0722123456)';
     }
     return error;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    
+    let processedValue = value;
+    
+    // Pentru CNP - permite doar numere, max 13 cifre
+    if (name === 'CNP') {
+      processedValue = value.replace(/\D/g, '').slice(0, 13);
+    }
+    
+    // Pentru telefon - permite + și numere, cu limită de 20 caractere
+    if (name === 'phone') {
+      // Permite doar + și numere
+      processedValue = value.replace(/[^\d+]/g, '');
+      // Verifică că + este doar la început
+      if (processedValue.includes('+') && !processedValue.startsWith('+')) {
+        processedValue = processedValue.replace(/\+/g, '');
+      }
+      // Limitează la 20 caractere
+      processedValue = processedValue.slice(0, 20);
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: processedValue
     }));
+    
     if (["first_name", "last_name", "email", "CNP", "phone"].includes(name)) {
-      const error = validateField(name, value);
+      const error = validateField(name, processedValue);
       setErrors(prev => ({ ...prev, [name]: error || undefined }));
     } else if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
@@ -104,13 +127,15 @@ const RegisterForm = () => {
       newErrors.confirmPassword = 'Parolele nu coincid';
     }
     if (!/^\d{13}$/.test(formData.CNP)) {
-      newErrors.CNP = 'CNP-ul trebuie să aibă 13 cifre';
+      newErrors.CNP = 'CNP-ul trebuie să aibă exact 13 cifre';
     }
     if (!formData.address) {
       newErrors.address = 'Adresa este obligatorie';
     }
-    if (!/^\d{10}$/.test(formData.phone)) {
-      newErrors.phone = 'Telefonul trebuie să aibă 10 cifre';
+    // Permite format internațional: +40, +44, etc. + numărul
+    const phoneRegex = /^(\+\d{1,4})?(\d{7,15})$/;
+    if (!phoneRegex.test(formData.phone)) {
+      newErrors.phone = 'Telefonul trebuie să aibă format valid (ex: +40722123456 sau 0722123456)';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -124,7 +149,7 @@ const RegisterForm = () => {
     }
     setIsLoading(true);
     try {
-      const response = await axios.post('http://localhost/api/registerUser.php', {
+              const response = await axios.post('http://localhost/api/registerUser.php', {
         first_name: formData.first_name,
         last_name: formData.last_name,
         email: formData.email,
@@ -219,12 +244,14 @@ const RegisterForm = () => {
             <input
               type="text"
               name="CNP"
-              placeholder="CNP"
+              placeholder="CNP (13 cifre)"
               value={formData.CNP}
               onChange={handleChange}
               onBlur={handleBlur}
               className={errors.CNP ? 'error' : ''}
               required
+              maxLength={13}
+              inputMode="numeric"
             />
             {errors.CNP && <span className="error-text">{errors.CNP}</span>}
           </div>
@@ -242,14 +269,16 @@ const RegisterForm = () => {
           </div>
           <div className="form-group">
             <input
-              type="text"
+              type="tel"
               name="phone"
-              placeholder="Telefon"
+              placeholder="Telefon (ex: +40722123456 sau 0722123456)"
               value={formData.phone}
               onChange={handleChange}
               onBlur={handleBlur}
               className={errors.phone ? 'error' : ''}
               required
+              maxLength={20}
+              inputMode="tel"
             />
             {errors.phone && <span className="error-text">{errors.phone}</span>}
           </div>

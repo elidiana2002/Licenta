@@ -9,6 +9,7 @@
   --card-background: #ffffff;
   --border-radius: 16px;
   --transition: all 0.3s ease;
+  --border-color: #e0e0e0;
 }
 
 /* Stil general */
@@ -97,7 +98,7 @@ a:hover {
   border-radius: 12px;
   font-size: 16px;
   background-color: #23232b;
-  color: #fff;
+  color: #fff !important;
   transition: var(--transition);
   width: 100%;
   box-sizing: border-box;
@@ -111,12 +112,23 @@ a:hover {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 4px rgba(249, 224, 113, 0.15);
   outline: none;
+  color: #fff !important;
+  background-color: #23232b;
+}
+
+.auth-form input:hover {
+  color: #fff !important;
+  background-color: #23232b;
 }
 
 .auth-form input.error {
   border-color: var(--error-color);
   background-color: #23232b;
-  color: #fff;
+  color: #fff !important;
+}
+
+.auth-form input.error::placeholder {
+  color: #ccc;
 }
 
 /* Buton general */
@@ -270,6 +282,8 @@ form input {
   border: 2px solid #eee;
   border-radius: 12px;
   font-size: 1rem;
+  background-color: #23232b;
+  color: #fff !important;
   transition: var(--transition);
   box-sizing: border-box;
 }
@@ -278,6 +292,17 @@ form input:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 4px rgba(249, 224, 113, 0.15);
   outline: none;
+  background-color: #23232b;
+  color: #fff !important;
+}
+
+form input:hover {
+  background-color: #23232b;
+  color: #fff !important;
+}
+
+form input::placeholder {
+  color: #ccc;
 }
 
 form button {
@@ -325,7 +350,8 @@ form button:hover {
 
 .form-group input.error {
   border-color: var(--error-color);
-  background-color: rgba(231, 76, 60, 0.05);
+  background-color: #23232b;
+  color: #fff !important;
 }
 
 .error-text {
