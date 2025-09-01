@@ -1,7 +1,5 @@
 <?php
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Cache-Control, Pragma');
+
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -163,27 +161,36 @@ try {
         throw new Exception('account_id invalid: ' . $account_id);
     }
     
-    // Actualizează balance-urile
-    $stmt = $conn->prepare("UPDATE accounts SET balance = balance - ? WHERE id = ?");
-    $stmt->execute([$amount, $from_account_id]);
+    // Determină status-ul tranzacției
+    $transaction_status = $is_internal_transfer ? 'completed' : 'pending';
     
-    if (!$is_internal_transfer) {
+    // Pentru transferurile interne (la fel client), execută imediat
+    // Pentru transferurile externe, lasă pending pentru aprobare
+    if ($is_internal_transfer) {
+        // Actualizează balance-urile doar pentru transferuri interne
+        $stmt = $conn->prepare("UPDATE accounts SET balance = balance - ? WHERE id = ?");
+        $stmt->execute([$amount, $from_account_id]);
+        
         $stmt = $conn->prepare("UPDATE accounts SET balance = balance + ? WHERE id = ?");
         $stmt->execute([$amount, $to_account_id]);
-    }
-    
-    // Obține balance-ul actualizat pentru account-ul sursă
-    $stmt = $conn->prepare("SELECT balance FROM accounts WHERE id = ?");
-    $stmt->execute([$from_account_id]);
-    $updated_balance = $stmt->fetch(PDO::FETCH_ASSOC)['balance'];
-    
-    // Înregistrează transferul în istoric
-    $stmt = $conn->prepare("INSERT INTO history (client_id, account_id, field_changed, old_value, new_value, changed_at, changed_by) VALUES (?, ?, 'transfer_out', ?, ?, NOW(), 'system')");
-    $stmt->execute([$client_id, $from_account_id, $from_account['balance'], $updated_balance]);
-    
-    if (!$is_internal_transfer) {
+        
+        // Obține balance-ul actualizat pentru account-ul sursă
+        $stmt = $conn->prepare("SELECT balance FROM accounts WHERE id = ?");
+        $stmt->execute([$from_account_id]);
+        $updated_balance = $stmt->fetch(PDO::FETCH_ASSOC)['balance'];
+        
+        // Înregistrează transferul în istoric
+        $stmt = $conn->prepare("INSERT INTO history (client_id, account_id, field_changed, old_value, new_value, changed_at, changed_by) VALUES (?, ?, 'transfer_out', ?, ?, NOW(), 'system')");
+        $stmt->execute([$client_id, $from_account_id, $from_account['balance'], $updated_balance]);
+        
         $stmt = $conn->prepare("INSERT INTO history (client_id, account_id, field_changed, old_value, new_value, changed_at, changed_by) VALUES (?, ?, 'transfer_in', ?, ?, NOW(), 'system')");
         $stmt->execute([$client_id, $to_account_id, $to_account['balance'], $to_account['balance'] + $amount]);
+        
+        $balance_after = $updated_balance;
+    } else {
+        // Pentru transferuri externe, doar verifică balance-ul fără să-l modifice
+        // Balance-ul va fi modificat în processTransferNotification.php când se acceptă
+        $balance_after = $from_account['balance']; // Balance-ul rămâne neschimbat pentru pending
     }
     
     // Obține destination_account_id direct (nu mai avem nevoie de destination_card_id)
@@ -197,9 +204,6 @@ try {
     $description = $is_internal_transfer 
         ? "Transfer intern în account #$from_account_id" 
         : "Transfer de la account #$from_account_id către account #$to_account_id";
-        
-    // Folosește balance-ul actualizat
-    $balance_after = $updated_balance;
     
     // Debug: afișează valorile găsite
     error_log("Transfer debug - from_account_id: $from_account_id, to_account_id: $to_account_id");
@@ -240,7 +244,7 @@ try {
          $destination_account_id, // 2. destination_account_id
          $amount,            // 3. amount
          $currency,          // 4. currency
-         'pending',          // 5. status - PENDING în loc de completed
+         $transaction_status, // 5. status - completed pentru intern, pending pentru extern
          'transfer',         // 6. transaction_type
          'IBAN',            // 7. method
          'other',            // 8. category
@@ -250,6 +254,68 @@ try {
     
     // Confirmă tranzacția
     $conn->commit();
+    
+    // Salvează automat destinatarul pentru toate tipurile de transfer (inclusiv interne)
+    if ($transfer_type === 'phone' || $transfer_type === 'iban' || $transfer_type === 'internal') {
+        try {
+            // Obține numărul de telefon al destinatarului
+            $recipient_phone = null;
+            if ($transfer_type === 'phone') {
+                $recipient_phone = $data['to_phone'];
+            } elseif ($transfer_type === 'iban') {
+                // Obține numărul de telefon din account-ul destinatarului
+                $stmt = $conn->prepare("SELECT c.phone FROM clients c WHERE c.id = ?");
+                $stmt->execute([$to_account['client_id']]);
+                $recipient_phone = $stmt->fetchColumn();
+                
+                // Debug log
+                error_log("IBAN transfer - client_id: " . $to_account['client_id'] . ", phone: " . $recipient_phone);
+            } elseif ($transfer_type === 'internal') {
+                // Obține numărul de telefon din account-ul destinatarului pentru transferuri interne
+                $stmt = $conn->prepare("SELECT c.phone FROM clients c WHERE c.id = ?");
+                $stmt->execute([$to_account['client_id']]);
+                $recipient_phone = $stmt->fetchColumn();
+                
+                // Debug log
+                error_log("Internal transfer - client_id: " . $to_account['client_id'] . ", phone: " . $recipient_phone);
+            }
+            
+            if ($recipient_phone) {
+                // Verifică dacă destinatarul este deja salvat
+                $stmt = $conn->prepare("SELECT id FROM saved_recipients WHERE client_id = ? AND recipient_phone = ?");
+                $stmt->execute([$client_id, $recipient_phone]);
+                $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if (!$existing) {
+                    // Salvează destinatarul
+                    $recipient_name = $to_account['first_name'] . ' ' . $to_account['last_name'];
+                    $bank_name = $to_account['bank_name'];
+                    
+                    $stmt = $conn->prepare("
+                        INSERT INTO saved_recipients (
+                            client_id, 
+                            recipient_phone, 
+                            recipient_name, 
+                            recipient_bank, 
+                            created_at
+                        ) VALUES (?, ?, ?, ?, NOW())
+                    ");
+                    $stmt->execute([
+                        $client_id,
+                        $recipient_phone,
+                        $recipient_name,
+                        $bank_name
+                    ]);
+                    
+                    // Debug log
+                    error_log("Destinatar salvat automat - client_id: $client_id, phone: $recipient_phone, name: $recipient_name, bank: $bank_name");
+                }
+            }
+        } catch (Exception $e) {
+            // Nu întrerupe transferul dacă salvarea destinatarului eșuează
+            error_log("Eroare la salvarea destinatarului: " . $e->getMessage());
+        }
+    }
     
          // Mesaj de succes în funcție de tipul transferului
      if ($is_internal_transfer) {

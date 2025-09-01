@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './ClientHistoryPage.css';
+import axios from 'axios';
 
 const ClientHistoryPage = () => {
   const [filter, setFilter] = useState('all');
@@ -10,6 +11,26 @@ const ClientHistoryPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  
+  // State pentru modalul de transfer repetat
+  const [showRepeatTransferModal, setShowRepeatTransferModal] = useState(false);
+  interface RepeatTransferData {
+    amount: number;
+    currency: string;
+    destination_client_name: string;
+    source_client_name: string;
+    transaction_direction: string;
+    original_transaction_id: number;
+    fromAccountId: number;
+    toAccountId?: number | 'phone_transfer' | 'iban_transfer';
+    recipientPhone?: string | null;
+    recipientIBAN?: string | null;
+  }
+
+  const [repeatTransferData, setRepeatTransferData] = useState<RepeatTransferData | null>(null);
+  
+  // State pentru clientId
+  const [clientId, setClientId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -30,10 +51,16 @@ const ClientHistoryPage = () => {
           setLoading(false);
           return;
         }
+        
+        // Setează clientId pentru a fi folosit în alte funcții
+        setClientId(user.id);
 
         // Debug: verificăm ce avem în user
         console.log('User din localStorage:', user);
         console.log('Client ID care va fi trimis:', user.id);
+        
+        // Debug: verificăm ce tranzacții avem
+        console.log('Tranzacții înainte de filtrare:', transactions);
         
         // Facem cererea direct către API-ul corect
         const response = await fetch('http://localhost/api/getTransactions.php', {
@@ -50,6 +77,8 @@ const ClientHistoryPage = () => {
 
         const data = await response.json();
         if (data.success) {
+          console.log('Tranzacții primite de la API:', data.transactions);
+          console.log('Status-uri găsite:', data.transactions.map((t: any) => ({ id: t.id, status: t.status, status_display: t.status_display })));
           setTransactions(data.transactions || []);
         } else {
           setError(data.error || 'Eroare la preluarea tranzacțiilor');
@@ -89,9 +118,38 @@ const ClientHistoryPage = () => {
   };
   
   const handleRepeatTransaction = (transaction: any) => {
-    // Implementează logica pentru repetarea tranzacției
-    // Poate deschide un modal sau naviga la pagina de transfer
-    alert(`Repetă transferul către ${transaction.other_party} pentru ${transaction.amount} ${transaction.currency}`);
+    // Verifică dacă tranzacția are toate datele necesare
+    if (!transaction || !transaction.amount || !transaction.destination_client_name) {
+      alert('Nu se pot repeta tranzacțiile fără date complete!');
+      return;
+    }
+    
+    // Pregătește datele pentru transferul repetat
+    const repeatData: RepeatTransferData = {
+      amount: parseFloat(transaction.amount) || 0,
+      currency: transaction.currency || 'RON',
+      destination_client_name: transaction.destination_client_name,
+      source_client_name: transaction.source_client_name || 'Client necunoscut',
+      transaction_direction: transaction.transaction_direction || 'outgoing',
+      original_transaction_id: transaction.id,
+      fromAccountId: transaction.account_id || 0,
+      toAccountId: transaction.destination_account_id,
+      recipientPhone: null, // Nu este disponibil în istoric
+      recipientIBAN: null   // Nu este disponibil în istoric
+    };
+    
+    // Debug: afișează ce date avem disponibile
+    console.log('Transaction data for repeat:', transaction);
+    console.log('Repeat data prepared:', repeatData);
+    
+    // Verifică dacă datele sunt valide
+    if (repeatData.amount <= 0) {
+      alert('Suma tranzacției trebuie să fie mai mare decât 0!');
+      return;
+    }
+    
+    setRepeatTransferData(repeatData);
+    setShowRepeatTransferModal(true);
   };
   
   const handleShowDetails = (transaction: any) => {
@@ -104,6 +162,88 @@ const ClientHistoryPage = () => {
     setSelectedTransaction(null);
   };
 
+  const closeRepeatTransferModal = () => {
+    setShowRepeatTransferModal(false);
+    setRepeatTransferData(null);
+  };
+
+  // Verifică dacă modalul trebuie închis automat
+  useEffect(() => {
+    if (showRepeatTransferModal && (!repeatTransferData || repeatTransferData.amount <= 0)) {
+      setShowRepeatTransferModal(false);
+      setRepeatTransferData(null);
+    }
+  }, [showRepeatTransferModal, repeatTransferData]);
+
+  const executeRepeatTransfer = async () => {
+    if (!repeatTransferData) {
+      alert('Nu există date pentru transferul repetat!');
+      return;
+    }
+    
+    // Verifică dacă suma este validă
+    if (!repeatTransferData.amount || repeatTransferData.amount <= 0) {
+      alert('Suma trebuie să fie mai mare decât 0!');
+      return;
+    }
+    
+    if (!clientId) {
+      alert('ID-ul clientului nu este disponibil. Te rugăm să te autentifici din nou.');
+      return;
+    }
+    
+    try {
+      // Determină tipul de transfer pe baza datelor tranzacției originale
+      let transferType: 'internal' | 'phone' | 'iban';
+      let toAccountId: number | null = null;
+      let toPhone: string | null = null;
+      let toIban: string | null = null;
+      
+      // Pentru moment, folosim doar transferuri interne deoarece nu avem recipient_phone/recipient_iban în istoric
+      if (repeatTransferData.toAccountId && typeof repeatTransferData.toAccountId === 'number') {
+        transferType = 'internal';
+        toAccountId = repeatTransferData.toAccountId;
+      } else {
+        alert('Nu se poate repeta acest tip de transfer. Doar transferurile interne pot fi repetate momentan.');
+        return;
+      }
+      
+      // Construiește payload-ul exact ca în CarduriPage.tsx
+      const transferData: any = {
+        from_account_id: repeatTransferData.fromAccountId,
+        amount: repeatTransferData.amount,
+        client_id: clientId,
+        transfer_type: transferType
+      };
+      
+      // Adaugă câmpurile specifice tipului de transfer
+      if (transferType === 'internal') {
+        transferData.to_account_id = toAccountId;
+      }
+      
+      // Face apelul către backend cu același format ca CarduriPage.tsx
+      const response = await axios.post('http://localhost/api/transferBetweenAccounts.php', transferData);
+      
+      if ((response.data as any).success) {
+        // Afișează mesaj de succes
+        alert(`Transfer repetat către ${repeatTransferData.destination_client_name} pentru ${repeatTransferData.amount} ${repeatTransferData.currency} - În așteptare de aprobare!`);
+        
+        // Închide modalul
+        closeRepeatTransferModal();
+        
+        // Reîmprospătează lista de tranzacții din backend
+        window.location.reload();
+        
+      } else {
+        alert(`Eroare la repetarea transferului: ${(response.data as any).message || 'Eroare necunoscută'}`);
+      }
+      
+    } catch (error) {
+      console.error('Eroare la executarea transferului repetat:', error);
+      alert('Eroare la conectarea cu serverul! Verifică dacă backend-ul rulează.');
+    }
+  };
+
   // Filtrare tranzacții
   const filteredTransactions = filter === 'all'
     ? transactions
@@ -111,8 +251,16 @@ const ClientHistoryPage = () => {
         if (filter === 'completed' || filter === 'accepted') {
           return t.status === 'completed' || t.status === 'accepted';
         }
+        if (filter === 'cancelled') {
+          return t.status === 'cancelled';
+        }
         return t.status === filter;
       });
+      
+  // Debug: verificăm tranzacțiile după filtrare
+  console.log('Filter curent:', filter);
+  console.log('Tranzacții după filtrare:', filteredTransactions);
+  console.log('Status-uri după filtrare:', filteredTransactions.map((t: any) => ({ id: t.id, status: t.status, status_display: t.status_display })));
 
   // Sortare tranzacții
   const sortedTransactions = [...filteredTransactions].sort((a, b) => {
@@ -157,6 +305,7 @@ const ClientHistoryPage = () => {
             <option value="completed">Finalizate (completed/accepted)</option>
             <option value="pending">În așteptare</option>
             <option value="rejected">Respinse</option>
+            <option value="cancelled">Anulate</option>
           </select>
         </div>
         
@@ -191,18 +340,56 @@ const ClientHistoryPage = () => {
           <span>Status</span>
           <span>Sumă</span>
           <span>Client Sursă</span>
-          <span>Tip Tranzacție</span>
+          <span>Acțiuni</span>
         </div>
           <ul className="transaction-list">
             {sortedTransactions.map((t) => (
               <li key={t.id} className="transaction-item">
                 <span className="transaction-date">{new Date(t.created_at).toLocaleDateString('ro-RO')}</span>
-                <span className={`transaction-status ${t.transaction_direction === 'incoming' ? 'incoming' : 'outgoing'} ${t.status === 'returned' ? 'returned' : ''}`}>
+                <span className={`transaction-status ${t.transaction_direction === 'incoming' ? 'incoming' : 'outgoing'} ${t.status === 'returned' ? 'returned' : ''} ${t.status === 'cancelled' ? 'cancelled' : ''}`}>
                 {t.status_display || t.status}
               </span>
                 <span className="transaction-amount">
-                  {t.transaction_direction === 'incoming' ? '+' : '-'}
-                  {t.amount_formatted || t.amount} {t.currency || 'RON'}
+                  {(() => {
+                    // Logica pentru afișarea corectă a sumelor
+                    let sign = '';
+                    let amount = t.amount_formatted || t.amount;
+                    
+                                          // Debug pentru toate tranzacțiile
+                      console.log(`Tranzacție ID ${t.id}:`, {
+                        status: t.status,
+                        direction: t.transaction_direction,
+                        amount: amount,
+                        fullTransaction: t
+                      });
+                    
+                    if (t.status === 'rejected' && t.transaction_direction === 'outgoing') {
+                      // Tranzacție respinsă - banii se returnează (nu se mai deduc)
+                      sign = '+';
+                    } else if (t.status === 'cancelled' && t.transaction_direction === 'outgoing') {
+                      // Tranzacție anulată - banii se returnează (nu se mai deduc)
+                      sign = '+';
+                    } else if (t.status === 'returned') {
+                      // Pentru tranzacții returnate, logica este inversă:
+                      // Dacă originalul era incoming (primești bani), acum returnezi (trimiti bani) = -
+                      // Dacă originalul era outgoing (trimiti bani), acum primești înapoi = +
+                      if (t.transaction_direction === 'incoming') {
+                        // Originalul era incoming (primești bani), acum returnezi (trimiti bani înapoi)
+                        sign = '-';
+                      } else {
+                        // Originalul era outgoing (trimiti bani), acum primești înapoi
+                        sign = '+';
+                      }
+                    } else if (t.transaction_direction === 'incoming') {
+                      // Primești bani
+                      sign = '+';
+                    } else {
+                      // Trimiti bani
+                      sign = '-';
+                    }
+                    
+                    return `${sign}${amount} ${t.currency || 'RON'}`;
+                  })()}
                 </span>
                               <span className="transaction-client">
                   {t.transaction_direction === 'incoming' 
@@ -218,64 +405,57 @@ const ClientHistoryPage = () => {
                   📋 Detalii
                 </button>
                 
-                              {/* Opțiunea de repetare pentru tranzacțiile pe care le-ai inițiat tu */}
-              {t.transaction_direction === 'outgoing' && (t.status === 'accepted' || t.status === 'completed') && (
-                <button 
-                  className="action-btn repeat-btn"
-                  onClick={() => handleRepeatTransaction(t)}
-                >
-                  🔄 Repetă
-                </button>
-              )}
+                {/* Toate butoanele de acțiune în dreapta butonului Detalii */}
+                {/* Opțiunea de repetare pentru tranzacțiile pe care le-ai inițiat tu (accepted, completed, rejected, returned) */}
+                {t.transaction_direction === 'outgoing' && (t.status === 'accepted' || t.status === 'completed' || t.status === 'rejected' || t.status === 'returned') && (
+                  <button 
+                    className="action-btn repeat-btn"
+                    onClick={() => handleRepeatTransaction(t)}
+                  >
+                    🔄 Repetă
+                  </button>
+                )}
+                
+                {/* Opțiuni de acțiune pentru tranzacțiile în așteptare */}
+                {t.status === 'pending' && t.transaction_direction === 'incoming' && (
+                  <>
+                    <button 
+                      className="action-btn accept-btn"
+                      onClick={() => handleTransferAction(t.id, 'accept')}
+                    >
+                      ✅ Acceptă
+                    </button>
+                    <button 
+                      className="action-btn reject-btn"
+                      onClick={() => handleTransferAction(t.id, 'reject')}
+                    >
+                      ❌ Respinge
+                    </button>
+                  </>
+                )}
+                
+                {/* Opțiuni pentru tranzacțiile tale (outgoing) - anulare pentru cele în așteptare */}
+                {t.status === 'pending' && t.transaction_direction === 'outgoing' && (
+                  <button 
+                    className="action-btn cancel-btn"
+                    onClick={() => handleTransferAction(t.id, 'cancel')}
+                  >
+                    🚫 Anulează
+                  </button>
+                )}
+                
+                {/* Opțiuni pentru tranzacțiile acceptate (incoming) - doar returnează */}
+                {t.status === 'accepted' && t.transaction_direction === 'incoming' && (
+                  <button 
+                    className="action-btn return-btn"
+                    onClick={() => handleTransferAction(t.id, 'return')}
+                  >
+                    💰 Returnează
+                  </button>
+                )}
             </div>
             
-            {/* Opțiuni de acțiune pentru tranzacțiile în așteptare */}
-            {t.status === 'pending' && t.transaction_direction === 'incoming' && (
-              <div className="transaction-actions">
-                <button 
-                  className="action-btn accept-btn"
-                  onClick={() => handleTransferAction(t.id, 'accept')}
-                >
-                  ✅ Acceptă
-                </button>
-                <button 
-                  className="action-btn reject-btn"
-                  onClick={() => handleTransferAction(t.id, 'reject')}
-                >
-                  ❌ Respinge
-                </button>
-              </div>
-            )}
-            
-            {/* Opțiuni pentru tranzacțiile tale (outgoing) - anulare pentru cele în așteptare */}
-            {t.status === 'pending' && t.transaction_direction === 'outgoing' && (
-              <div className="transaction-actions">
-                <button 
-                  className="action-btn cancel-btn"
-                  onClick={() => handleTransferAction(t.id, 'cancel')}
-                >
-                  🚫 Anulează tranzacția
-                </button>
-              </div>
-            )}
-            
-            {/* Opțiuni pentru tranzacțiile acceptate (incoming) */}
-            {t.status === 'accepted' && t.transaction_direction === 'incoming' && (
-              <div className="transaction-actions">
-                <button 
-                  className="action-btn return-btn"
-                  onClick={() => handleTransferAction(t.id, 'return')}
-                >
-                  💰 Returnează
-                </button>
-                <button 
-                  className="action-btn repeat-btn"
-                  onClick={() => handleRepeatTransaction(t)}
-                >
-                  🔄 Repetă
-                </button>
-              </div>
-            )}
+
             </li>
           ))}
         </ul>
@@ -296,28 +476,49 @@ const ClientHistoryPage = () => {
             <div className="modal-body">
               <div className="transaction-info">
                 <div className="info-row">
-                  <span className="info-label">ID Tranzacție:</span>
-                  <span className="info-value">{selectedTransaction.id}</span>
-                </div>
-                
-                <div className="info-row">
-                  <span className="info-label">Tip:</span>
-                  <span className="info-value">{selectedTransaction.transaction_type || 'transfer'}</span>
-                </div>
-                
-                <div className="info-row">
-                  <span className="info-label">Metodă:</span>
-                  <span className="info-value">{selectedTransaction.method || 'IBAN'}</span>
-                </div>
-                
-                <div className="info-row">
-                  <span className="info-label">Categorie:</span>
-                  <span className="info-value">{selectedTransaction.category || 'other'}</span>
-                </div>
-                
-                <div className="info-row">
-                  <span className="info-label">Descriere:</span>
-                  <span className="info-value">{selectedTransaction.description || `Transfer de la account #${selectedTransaction.source_account_number || '1'} către account #${selectedTransaction.destination_account_number || '12'}`}</span>
+                  <span className="info-label">Sumă:</span>
+                  <span className="info-value">
+                    {(() => {
+                      // Logica pentru afișarea corectă a sumelor în modal
+                      let sign = '';
+                      let amount = selectedTransaction.amount_formatted || selectedTransaction.amount;
+                      
+                      // Debug pentru toate tranzacțiile în modal
+                      console.log(`Modal - Tranzacție ID ${selectedTransaction.id}:`, {
+                        status: selectedTransaction.status,
+                        direction: selectedTransaction.transaction_direction,
+                        amount: amount,
+                        fullTransaction: selectedTransaction
+                      });
+                      
+                      if (selectedTransaction.status === 'rejected' && selectedTransaction.transaction_direction === 'outgoing') {
+                        // Tranzacție respinsă - banii se returnează (nu se mai deduc)
+                        sign = '+';
+                      } else if (selectedTransaction.status === 'cancelled' && selectedTransaction.transaction_direction === 'outgoing') {
+                        // Tranzacție anulată - banii se returnează (nu se mai deduc)
+                        sign = '+';
+                      } else if (selectedTransaction.status === 'returned') {
+                        // Pentru tranzacții returnate, logica este inversă:
+                        // Dacă originalul era incoming (primești bani), acum returnezi (trimiti bani) = -
+                        // Dacă originalul era outgoing (trimiti bani), acum primești înapoi = +
+                        if (selectedTransaction.transaction_direction === 'incoming') {
+                          // Originalul era incoming (primești bani), acum returnezi (trimiti bani înapoi)
+                          sign = '-';
+                        } else {
+                          // Originalul era outgoing (trimiti bani), acum primești înapoi
+                          sign = '+';
+                        }
+                      } else if (selectedTransaction.transaction_direction === 'incoming') {
+                        // Primești bani
+                        sign = '+';
+                      } else {
+                        // Trimiti bani
+                        sign = '-';
+                      }
+                      
+                      return `${sign}${amount} ${selectedTransaction.currency || 'RON'}`;
+                    })()}
+                  </span>
                 </div>
                 
                 <div className="info-row">
@@ -328,7 +529,7 @@ const ClientHistoryPage = () => {
                 </div>
                 
                 <div className="info-row">
-                  <span className="info-label">Direcție:</span>
+                  <span className="info-label">Tip:</span>
                   <span className="info-value">
                     {selectedTransaction.transaction_direction === 'incoming' ? 'Primești bani' : 'Trimiti bani'}
                   </span>
@@ -336,11 +537,16 @@ const ClientHistoryPage = () => {
                 
                 <div className="info-row">
                   <span className="info-label">Partener:</span>
-                  <span className="info-value">{selectedTransaction.other_party || '111 111'}</span>
+                  <span className="info-value">
+                    {selectedTransaction.transaction_direction === 'incoming' 
+                      ? selectedTransaction.source_client_name || 'Client necunoscut'
+                      : selectedTransaction.destination_client_name || 'Client necunoscut'
+                    }
+                  </span>
                 </div>
                 
                 <div className="info-row">
-                  <span className="info-label">Data:</span>
+                  <span className="info-label">Data și ora:</span>
                   <span className="info-value">
                     {new Date(selectedTransaction.created_at).toLocaleDateString('ro-RO')}, {new Date(selectedTransaction.created_at).toLocaleTimeString('ro-RO')}
                   </span>
@@ -360,6 +566,68 @@ const ClientHistoryPage = () => {
             <div className="modal-footer">
               <button className="modal-close-btn-large" onClick={closeDetailsModal}>
                 Închide
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal pentru transfer repetat */}
+      {showRepeatTransferModal && repeatTransferData && repeatTransferData.amount > 0 && (
+        <div className="modal-overlay" onClick={closeRepeatTransferModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🔄 Repetă Transferul</h2>
+              <button className="modal-close-btn" onClick={closeRepeatTransferModal}>
+                ✕
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="transaction-info">
+                <div className="info-row">
+                  <span className="info-label">Destinatar:</span>
+                  <span className="info-value">
+                    {repeatTransferData.destination_client_name || 'Client necunoscut'}
+                  </span>
+                </div>
+                
+                <div className="info-row">
+                  <span className="info-label">Tip tranzacție:</span>
+                  <span className="info-value">
+                    {repeatTransferData.transaction_direction === 'incoming' ? 'Primești bani' : 'Trimiti bani'}
+                  </span>
+                </div>
+                
+                <div className="info-row">
+                  <span className="info-label">Sumă nouă:</span>
+                  <input
+                    type="number"
+                    value={repeatTransferData.amount}
+                    onChange={(e) => setRepeatTransferData((prev: RepeatTransferData | null) => prev ? {
+                      ...prev,
+                      amount: parseFloat(e.target.value) || 0
+                    } : null)}
+                    min="0.01"
+                    step="0.01"
+                    className="amount-input"
+                    placeholder="Introdu suma"
+                  />
+                  <span className="currency-display"> {repeatTransferData.currency}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button className="modal-close-btn-large" onClick={closeRepeatTransferModal}>
+                Anulează
+              </button>
+              <button 
+                className="action-btn repeat-btn" 
+                onClick={executeRepeatTransfer}
+                style={{ marginLeft: '10px' }}
+              >
+                🔄 Execută Transferul
               </button>
             </div>
           </div>

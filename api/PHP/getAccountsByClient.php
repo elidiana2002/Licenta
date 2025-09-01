@@ -1,8 +1,11 @@
 <?php
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
-header('Access-Control-Allow-Headers: Content-Type');
+
+// Răspunde la preflight CORS
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
 
 // Conectare la baza de date
 $host = 'localhost';
@@ -18,7 +21,7 @@ try {
     exit;
 }
 
-// Verifică dacă este o cerere POST
+// Acceptă doar POST (OPTIONS e deja tratat)
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'error' => 'Metoda HTTP nu este permisă']);
     exit;
@@ -34,15 +37,57 @@ if (!$client_id) {
 }
 
 try {
-    // Găsește conturile clientului
-    $stmt = $pdo->prepare("SELECT id, iban, currency, balance, account_type FROM accounts WHERE client_id = ?");
-    $stmt->execute([$client_id]);
-    $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // Găsește cardurile clientului cu toate accounturile asociate (fără balance pentru securitate)
+    $stmt = $pdo->prepare("SELECT 
+            c.id as card_id,
+            c.card_number,
+            c.card_type,
+            c.expiration_date,
+            c.status,
+            GROUP_CONCAT(a.iban ORDER BY a.iban SEPARATOR ', ') as account_ibans,
+            COUNT(a.id) as accounts_count
+        FROM cards c
+        LEFT JOIN accounts a ON a.card_id = c.id
+        WHERE EXISTS (SELECT 1 FROM accounts a2 WHERE a2.client_id = ? AND a2.card_id = c.id)
+        GROUP BY c.id, c.card_number, c.card_type, c.expiration_date, c.status
+        ORDER BY c.id ASC");
     
-    if ($accounts) {
-        echo json_encode(['success' => true, 'accounts' => $accounts]);
+    // Debug: log the query and parameters
+    error_log("getAccountsByClient.php - Query: SELECT c.id as card_id, c.card_number, c.card_type, c.expiration_date, c.status, GROUP_CONCAT(a.iban ORDER BY a.iban SEPARATOR ', ') as account_ibans, COUNT(a.id) as accounts_count FROM cards c LEFT JOIN accounts a ON a.card_id = c.id WHERE EXISTS (SELECT 1 FROM accounts a2 WHERE a2.client_id = " . $client_id . " AND a2.card_id = c.id) GROUP BY c.id, c.card_number, c.card_type, c.expiration_date, c.status ORDER BY c.id ASC");
+    $stmt->execute([$client_id]);
+    $cards = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Debug: log the results
+    error_log("getAccountsByClient.php - Found " . count($cards) . " cards for client_id: " . $client_id);
+    error_log("getAccountsByClient.php - Cards data: " . print_r($cards, true));
+    
+    if (count($cards) === 0) {
+        // Verifică dacă clientul are accounturi
+        $stmt2 = $pdo->prepare("SELECT COUNT(*) as account_count FROM accounts WHERE client_id = ?");
+        $stmt2->execute([$client_id]);
+        $accountCount = $stmt2->fetch(PDO::FETCH_ASSOC)['account_count'];
+        
+        if ($accountCount === 0) {
+            echo json_encode([
+                'success' => false, 
+                'error' => 'Clientul nu are accounturi bancare',
+                'cards' => [],
+                'count' => 0
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false, 
+                'error' => 'Clientul are accounturi dar nu sunt asociate cu carduri',
+                'cards' => [],
+                'count' => 0
+            ]);
+        }
     } else {
-        echo json_encode(['success' => false, 'error' => 'Nu s-au găsit conturi pentru acest client']);
+        echo json_encode([
+            'success' => true,
+            'cards' => $cards,
+            'count' => count($cards)
+        ]);
     }
 } catch(PDOException $e) {
     echo json_encode(['success' => false, 'error' => 'Eroare la interogarea bazei de date: ' . $e->getMessage()]);

@@ -1,5 +1,5 @@
 <?php
-header('Access-Control-Allow-Origin: *');
+
 header('Content-Type: application/json');
 
 // Configurare conexiune baza de date

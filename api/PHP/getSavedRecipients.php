@@ -1,7 +1,5 @@
 <?php
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Cache-Control, Pragma');
+
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -46,6 +44,7 @@ try {
          LEFT JOIN banks b ON a.bank_id = b.id
         WHERE sr.client_id = ?
         ORDER BY sr.created_at DESC
+        LIMIT 5
     ");
     
     $stmt->execute([$client_id]);

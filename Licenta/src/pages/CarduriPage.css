@@ -892,3 +892,28 @@
     flex-direction: column;
   }
 }
+
+/* Stiluri pentru persoanele trimiși recent */
+.last-recipient-select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #000;
+  color: #fff;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.last-recipient-select:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.last-recipient-hint {
+  color: #666;
+  font-size: 12px;
+  margin-top: 4px;
+  font-style: italic;
+}

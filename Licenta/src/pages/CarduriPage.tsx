@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import './CarduriPage.css';
 
@@ -27,7 +27,7 @@ interface GetClientResponse {
 
 interface GetAccountsResponse {
   success: boolean;
-  accounts?: { id: number; iban: string; currency: string; account_type: string; balance: number | null }[];
+  cards?: { card_id: number; card_number: string; card_type: string; expiration_date: string; status: string; account_ibans: string; accounts_count: number }[];
   error?: string;
 }
 
@@ -105,6 +105,22 @@ const CarduriPage: React.FC = () => {
     recipientPhone: '' // Adăugat pentru transfer prin telefon
   });
 
+  // State pentru persoanele trimiși recent
+  const [savedRecipients, setSavedRecipients] = useState<any[]>([]);
+  const [showSavedRecipients, setShowSavedRecipients] = useState(false);
+
+  // Funcție pentru resetarea formularului de transfer
+  const resetTransferForm = () => {
+    setTransferForm({
+      fromAccountId: selectedAccount?.id || 0,
+      toAccountId: 0,
+      amount: '',
+      currency: 'RON',
+      recipientIBAN: '',
+      recipientPhone: ''
+    });
+  };
+
   // State pentru notificări
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -127,13 +143,18 @@ const CarduriPage: React.FC = () => {
       try {
         const clientRes = await axios.post<GetClientResponse>('http://localhost/api/getClientByEmail.php', { email: parsedUser.email });
         if (clientRes.data.success && clientRes.data.client) {
+          console.log('Setting clientId:', clientRes.data.client.id);
           setClientId(clientRes.data.client.id);
           
           const accountsRes = await axios.post<GetAccountsResponse>('http://localhost/api/getAccountsByClient.php', { client_id: clientRes.data.client.id });
-          if (accountsRes.data.success && accountsRes.data.accounts && accountsRes.data.accounts.length > 0) {
-            const account = accountsRes.data.accounts[0];
-            setAccountId(account.id);
-            setAccountData(account);
+          if (accountsRes.data.success && accountsRes.data.cards && accountsRes.data.cards.length > 0) {
+            const card = accountsRes.data.cards[0];
+            setAccountId(card.card_id);
+            setAccountData({ 
+              iban: card.account_ibans, 
+              currency: 'RON', 
+              account_type: card.card_type 
+            });
           } else {
             setError('Clientul nu are niciun cont bancar. Contactează administratorul.');
           }
@@ -237,6 +258,33 @@ const CarduriPage: React.FC = () => {
     }
   };
 
+  // Funcție pentru a obține persoanele trimiși recent
+  const getSavedRecipients = useCallback(async () => {
+    if (!clientId) return;
+    
+    try {
+      console.log('Obțin persoanele trimiși recent pentru client_id:', clientId);
+      const response = await fetch('http://localhost/api/getSavedRecipients.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ client_id: clientId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Răspuns getSavedRecipients:', data);
+        if (data.success) {
+          setSavedRecipients(data.recipients);
+          console.log('Persoane trimiși recent setate:', data.recipients);
+        }
+      }
+    } catch (error) {
+      console.error('Eroare la obținerea destinatarilor salvați:', error);
+    }
+  }, [clientId]);
+
   // Fetch cards după ce avem clientId
   useEffect(() => {
     if (!clientId) return;
@@ -277,7 +325,11 @@ const CarduriPage: React.FC = () => {
     
     // Obține și notificările
     fetchNotifications();
-  }, [clientId]);
+    
+    // Obține și persoanele trimiși recent
+    console.log('useEffect triggered, calling getSavedRecipients...');
+    getSavedRecipients();
+  }, [clientId, getSavedRecipients]);
 
   // Grupare carduri pe bancă
   const grouped = cards.reduce<{ [bank: string]: Card[] }>((acc, card) => {
@@ -464,13 +516,17 @@ const CarduriPage: React.FC = () => {
         setUseChaseFormat(false);
         setShowOtherBankInput(false);
         
-        if (clientId) {
-                                           const accountsRes = await axios.post<GetAccountsResponse>('http://localhost/api/getAccountsByClient.php', { client_id: clientId });
-          if (accountsRes.data.success && accountsRes.data.accounts && accountsRes.data.accounts.length > 0) {
-            const account = accountsRes.data.accounts[0];
-            setAccountId(account.id);
-            setAccountData(account);
-          }
+                  if (clientId) {
+            const accountsRes = await axios.post<GetAccountsResponse>('http://localhost/api/getAccountsByClient.php', { client_id: clientId });
+            if (accountsRes.data.success && accountsRes.data.cards && accountsRes.data.cards.length > 0) {
+              const card = accountsRes.data.cards[0];
+              setAccountId(card.card_id);
+              setAccountData({ 
+                iban: card.account_ibans, 
+                currency: 'RON', 
+                account_type: card.card_type 
+              });
+            }
           
                                            const cardsRes = await axios.post<GetCardsResponse>('http://localhost/api/getCardsByClient.php', { client_id: clientId });
           if (cardsRes.data.success) {
@@ -638,6 +694,17 @@ const CarduriPage: React.FC = () => {
       return;
     }
 
+    // Validare pentru persoanele din lista recentă
+    if (transferForm.toAccountId === 'last_recipient') {
+      console.log('Validating recent recipient transfer...');
+      console.log('Current transferForm:', transferForm);
+      if (!transferForm.recipientPhone) {
+        alert('Selectează o persoană din lista ta!');
+        return;
+      }
+      console.log('Transfer către persoana selectată:', transferForm.recipientPhone);
+    }
+
     // Validare suplimentară pentru formatul sumei
     if (!/^\d+(\.\d{1,2})?$/.test(transferForm.amount)) {
       alert('Suma trebuie să fie un număr valid (ex: 100 sau 100.50)!');
@@ -656,6 +723,9 @@ const CarduriPage: React.FC = () => {
     // Verifică dacă este transfer prin IBAN
     const isIbanTransfer = transferForm.toAccountId === 'iban_transfer';
     
+    // Verifică dacă este transfer către o persoană din lista recentă
+    const isLastRecipientTransfer = transferForm.toAccountId === 'last_recipient';
+    
     // Verifică dacă este transfer intern (de la tine la tine)
     const isInternalTransfer = typeof transferForm.toAccountId === 'number' && 
                               typeof transferForm.fromAccountId === 'number' && 
@@ -666,11 +736,11 @@ const CarduriPage: React.FC = () => {
         from_account_id: transferForm.fromAccountId,
         amount: amount,
         client_id: clientId,
-        transfer_type: isPhoneTransfer ? 'phone' : (isIbanTransfer ? 'iban' : 'internal')
+        transfer_type: isPhoneTransfer ? 'phone' : (isIbanTransfer ? 'iban' : (isLastRecipientTransfer ? 'phone' : 'internal'))
       };
 
-      if (isPhoneTransfer) {
-        // Transfer prin telefon - folosește numărul de telefon
+      if (isPhoneTransfer || isLastRecipientTransfer) {
+        // Transfer prin telefon sau către o persoană din lista recentă - folosește numărul de telefon
         transferData.to_phone = transferForm.recipientPhone; // Trimite numărul de telefon
       } else if (isIbanTransfer) {
         // Transfer prin IBAN - folosește IBAN-ul destinatarului
@@ -686,10 +756,12 @@ const CarduriPage: React.FC = () => {
         let transferType = 'între accounturi';
         if (isPhoneTransfer) transferType = 'prin telefon';
         else if (isIbanTransfer) transferType = 'prin IBAN';
+        else if (isLastRecipientTransfer) transferType = 'către persoana selectată';
         else if (isInternalTransfer) transferType = 'intern';
         
         alert(`Transfer ${transferType} realizat cu succes!`);
         setShowTransferModal(false);
+        resetTransferForm();
         
         // Reîmprospătează datele
         if (clientId) {
@@ -1138,7 +1210,10 @@ const CarduriPage: React.FC = () => {
               <div className="modal-header">
                 <h3>💸 Transfer între Accounturi</h3>
                 <button 
-                  onClick={() => setShowTransferModal(false)}
+                  onClick={() => {
+                    setShowTransferModal(false);
+                    resetTransferForm();
+                  }}
                   className="close-modal-button"
                 >
                   ✕
@@ -1183,6 +1258,8 @@ const CarduriPage: React.FC = () => {
                             setTransferForm(f => ({ ...f, toAccountId: 'phone_transfer' }));
                           } else if (value === 'iban_transfer') {
                             setTransferForm(f => ({ ...f, toAccountId: 'iban_transfer' }));
+                          } else if (value === 'last_recipient') {
+                            setTransferForm(f => ({ ...f, toAccountId: 'last_recipient' }));
                           } else {
                             setTransferForm(f => ({ ...f, toAccountId: parseInt(value) }));
                           }
@@ -1195,6 +1272,8 @@ const CarduriPage: React.FC = () => {
                         <option value="phone_transfer">📱 Transfer prin telefon</option>
                         {/* Opțiunea pentru transfer prin IBAN */}
                         <option value="iban_transfer">🏦 Transfer prin IBAN</option>
+                        {/* Opțiunea pentru persoanele recent */}
+                        <option value="last_recipient">👥 Persoane recente ({savedRecipients.length})</option>
                         {/* Accounturile existente */}
                         {cards.map(card => 
                           card.accounts?.map(account => 
@@ -1253,6 +1332,34 @@ const CarduriPage: React.FC = () => {
                       </label>
                     )}
 
+                    {/* Câmp pentru persoanele trimiși recent (apare doar când e selectat "Persoane trimiși recent") */}
+                    {transferForm.toAccountId === 'last_recipient' && (
+                      <label>
+                        Persoane trimiși recent:
+                        <select 
+                          value={transferForm.recipientPhone || ''} 
+                          onChange={e => {
+                          const selectedPhone = e.target.value;
+                          setTransferForm(f => ({ ...f, recipientPhone: selectedPhone }));
+                          console.log('Selected recipient phone:', selectedPhone);
+                          console.log('Updated transferForm:', { ...transferForm, recipientPhone: selectedPhone });
+                        }}
+                          required
+                          className="last-recipient-select"
+                        >
+                          <option value="">Selectează destinatarul</option>
+                          {savedRecipients.map(recipient => (
+                            <option key={recipient.id} value={recipient.phone}>
+                              👤 {recipient.name} - {recipient.phone} - {recipient.bank} ({recipient.currency})
+                            </option>
+                          ))}
+                        </select>
+                        <small className="last-recipient-hint">
+                          Selectează o persoană din lista ta de destinatari recenti
+                        </small>
+                      </label>
+                    )}
+
                     <label>
                       Suma:
                       <input 
@@ -1292,7 +1399,10 @@ const CarduriPage: React.FC = () => {
                       Execută Transfer
                     </button>
                     <button
-                      onClick={() => setShowTransferModal(false)}
+                      onClick={() => {
+                        setShowTransferModal(false);
+                        resetTransferForm();
+                      }}
                       className="cancel-transfer-button"
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#5a6268'}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6c757d'}
