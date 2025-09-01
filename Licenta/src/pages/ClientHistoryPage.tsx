@@ -12,6 +12,12 @@ const ClientHistoryPage = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   
+  // State pentru filtrarea după card și account
+  const [cards, setCards] = useState<any[]>([]);
+  const [selectedCardId, setSelectedCardId] = useState<string>('all');
+  const [selectedAccountIban, setSelectedAccountIban] = useState<string>('all');
+  const [loadingCards, setLoadingCards] = useState(false);
+  
   // State pentru modalul de transfer repetat
   const [showRepeatTransferModal, setShowRepeatTransferModal] = useState(false);
   interface RepeatTransferData {
@@ -31,6 +37,41 @@ const ClientHistoryPage = () => {
   
   // State pentru clientId
   const [clientId, setClientId] = useState<number | null>(null);
+
+  // Funcție pentru încărcarea cardurilor clientului
+  const fetchCards = async (clientId: number) => {
+    console.log('fetchCards called with clientId:', clientId);
+    setLoadingCards(true);
+    try {
+              const response = await fetch('http://localhost/api/getCardsByClient.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ client_id: clientId }),
+      });
+
+      console.log('fetchCards response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('fetchCards response data:', data);
+        if (data.success && data.cards) {
+          setCards(data.cards);
+          console.log('Cards loaded for filtering:', data.cards);
+          console.log('Cards count:', data.cards.length);
+        } else {
+          console.log('fetchCards failed:', data.error || 'No cards data');
+        }
+      } else {
+        console.log('fetchCards response not ok:', response.status);
+      }
+    } catch (error) {
+      console.error('Error loading cards:', error);
+    } finally {
+      setLoadingCards(false);
+    }
+  };
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -61,6 +102,9 @@ const ClientHistoryPage = () => {
         
         // Debug: verificăm ce tranzacții avem
         console.log('Tranzacții înainte de filtrare:', transactions);
+        
+        // Încarcă cardurile pentru filtrare
+        await fetchCards(user.id);
         
         // Facem cererea direct către API-ul corect
         const response = await fetch('http://localhost/api/getTransactions.php', {
@@ -222,7 +266,7 @@ const ClientHistoryPage = () => {
       }
       
       // Face apelul către backend cu același format ca CarduriPage.tsx
-      const response = await axios.post('http://localhost/api/transferBetweenAccounts.php', transferData);
+              const response = await axios.post('http://localhost/api/transferBetweenAccounts.php', transferData);
       
       if ((response.data as any).success) {
         // Afișează mesaj de succes
@@ -245,17 +289,39 @@ const ClientHistoryPage = () => {
   };
 
   // Filtrare tranzacții
-  const filteredTransactions = filter === 'all'
-    ? transactions
-    : transactions.filter((t) => {
-        if (filter === 'completed' || filter === 'accepted') {
-          return t.status === 'completed' || t.status === 'accepted';
+  const filteredTransactions = transactions.filter((t) => {
+    // Filtrare după status
+    if (filter !== 'all') {
+      if (filter === 'completed' || filter === 'accepted') {
+        if (!(t.status === 'completed' || t.status === 'accepted')) return false;
+      } else if (filter === 'cancelled') {
+        if (t.status !== 'cancelled') return false;
+      } else if (t.status !== filter) {
+        return false;
+      }
+    }
+    
+    // Filtrare după card
+    if (selectedCardId !== 'all') {
+      const selectedCard = cards.find(card => card.card_id.toString() === selectedCardId);
+      if (selectedCard && selectedCard.account_ibans) {
+        const cardAccountIbans = selectedCard.account_ibans.split(', ');
+        // Verifică dacă tranzacția aparține unuia din accounturile cardului
+        if (t.account_iban && !cardAccountIbans.includes(t.account_iban)) {
+          return false;
         }
-        if (filter === 'cancelled') {
-          return t.status === 'cancelled';
-        }
-        return t.status === filter;
-      });
+      }
+    }
+    
+    // Filtrare după account specific
+    if (selectedAccountIban !== 'all') {
+      if (t.account_iban !== selectedAccountIban) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
       
   // Debug: verificăm tranzacțiile după filtrare
   console.log('Filter curent:', filter);
@@ -298,33 +364,84 @@ const ClientHistoryPage = () => {
     <div className="history-container">
       <h1>Istoric Tranzacții</h1>
       <div className="controls-section">
-        <div className="filter-section">
-          <label htmlFor="filter">Filtrează după status:</label>
-          <select id="filter" value={filter} onChange={(e) => setFilter(e.target.value)}>
-            <option value="all">Toate</option>
-            <option value="completed">Finalizate (completed/accepted)</option>
-            <option value="pending">În așteptare</option>
-            <option value="rejected">Respinse</option>
-            <option value="cancelled">Anulate</option>
-          </select>
+        {/* Primul rând: Status și Sortare */}
+        <div className="filter-row">
+          <div className="filter-section">
+            <label htmlFor="filter">Filtrează după status:</label>
+            <select id="filter" value={filter} onChange={(e) => setFilter(e.target.value)}>
+              <option value="all">Toate</option>
+              <option value="completed">Finalizate (completed/accepted)</option>
+              <option value="pending">În așteptare</option>
+              <option value="rejected">Respinse</option>
+              <option value="cancelled">Anulate</option>
+            </select>
+          </div>
+          
+          <div className="sort-section">
+            <label htmlFor="sortBy">Sortează după:</label>
+            <select id="sortBy" value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
+              <option value="date">Dată</option>
+              <option value="amount">Sumă</option>
+              <option value="status">Status</option>
+              <option value="account">Account (IBAN)</option>
+            </select>
+            
+            <button 
+              className="sort-order-btn"
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              title={`Sortare ${sortOrder === 'asc' ? 'descrescătoare' : 'crescătoare'}`}
+            >
+              {sortOrder === 'asc' ? '↑' : '↓'}
+            </button>
+          </div>
         </div>
         
-        <div className="sort-section">
-          <label htmlFor="sortBy">Sortează după:</label>
-          <select id="sortBy" value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
-            <option value="date">Dată</option>
-            <option value="amount">Sumă</option>
-            <option value="status">Status</option>
-            <option value="account">Account (IBAN)</option>
-          </select>
+        {/* Al doilea rând: Card și Account (doar când apare account) */}
+        <div className="filter-row">
+          <div className="filter-section">
+            <label htmlFor="cardFilter">Filtrează după card:</label>
+            <select 
+              id="cardFilter" 
+              value={selectedCardId} 
+              onChange={(e) => {
+                setSelectedCardId(e.target.value);
+                setSelectedAccountIban('all'); // Reset account filter when card changes
+              }}
+              disabled={loadingCards}
+            >
+              <option value="all">🏦 Toate cardurile</option>
+              {cards.map((card) => (
+                <option key={card.card_id} value={card.card_id}>
+                  💳 Card: {card.card_number} ({card.accounts_count} account) - {card.card_type}
+                </option>
+              ))}
+            </select>
+          </div>
           
-          <button 
-            className="sort-order-btn"
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            title={`Sortare ${sortOrder === 'asc' ? 'descrescătoare' : 'crescătoare'}`}
-          >
-            {sortOrder === 'asc' ? '↑' : '↓'}
-          </button>
+          {/* Filtrare după account (doar când este selectat un card) */}
+          {selectedCardId !== 'all' && (
+            <div className="filter-section">
+              <label htmlFor="accountFilter">Filtrează după account:</label>
+              <select 
+                id="accountFilter" 
+                value={selectedAccountIban} 
+                onChange={(e) => setSelectedAccountIban(e.target.value)}
+              >
+                <option value="all">📊 Toate accounturile cardului</option>
+                {(() => {
+                  const selectedCard = cards.find(card => card.card_id.toString() === selectedCardId);
+                  if (selectedCard && selectedCard.account_ibans) {
+                    return selectedCard.account_ibans.split(', ').map((iban: string) => (
+                      <option key={iban} value={iban}>
+                        🏦 {iban}
+                      </option>
+                    ));
+                  }
+                  return [];
+                })()}
+              </select>
+            </div>
+          )}
         </div>
       </div>
       {loading ? (

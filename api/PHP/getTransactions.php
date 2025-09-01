@@ -34,14 +34,10 @@ function getMethodIcon($method) {
 
 $data = json_decode(file_get_contents('php://input'), true);
 
-// Debug: logăm ce primește backend-ul
-$debug_file = __DIR__ . "/debug.log";
-file_put_contents($debug_file, "=== " . date('Y-m-d H:i:s') . " ===\n", FILE_APPEND);
-file_put_contents($debug_file, "Raw input: " . file_get_contents('php://input') . "\n", FILE_APPEND);
-file_put_contents($debug_file, "Decoded data: " . print_r($data, true) . "\n", FILE_APPEND);
+
 
 if (!$data || !isset($data['client_id'])) {
-    echo json_encode(['error' => 'Client ID lipsă', 'received_data' => $data]);
+    echo json_encode(['success' => false, 'error' => 'Client ID lipsă', 'received_data' => $data]);
     exit;
 }
 
@@ -114,17 +110,14 @@ try {
         // Adaugă iconițe pentru metoda de plată
         $transaction['method_icon'] = getMethodIcon($transaction['method']);
         
-        // Debug: logăm informațiile pentru debugging
-        $debug_file = __DIR__ . "/debug.log";
-        file_put_contents($debug_file, "Transaction ID: {$transaction['id']}, account_id: {$transaction['account_id']}, destination_account_id: {$transaction['destination_account_id']}, client_id: $client_id\n", FILE_APPEND);
+
         
         // Debug: verifică dacă client_id corespunde cu account_id sau destination_account_id
         // Trebuie să verificăm dacă client_id corespunde cu client_id din account-uri, nu cu account_id
         $is_expeditor = false;
         $is_destinatar = false;
         
-        // Debug: logăm datele brute
-        file_put_contents($debug_file, "Transaction ID {$transaction['id']}: account_id={$transaction['account_id']}, destination_account_id={$transaction['destination_account_id']}, client_id=$client_id\n", FILE_APPEND);
+
         
         // Verifică dacă ești expeditorul (client_id din account-ul sursă)
         if ($transaction['account_id']) {
@@ -132,10 +125,8 @@ try {
             $stmt_client = $conn->prepare("SELECT client_id FROM accounts WHERE id = ?");
             $stmt_client->execute([$transaction['account_id']]);
             $source_client = $stmt_client->fetch(PDO::FETCH_ASSOC);
-            file_put_contents($debug_file, "Transaction ID {$transaction['id']}: Source account query result: " . print_r($source_client, true) . "\n", FILE_APPEND);
             if ($source_client && $source_client['client_id'] == $client_id) {
                 $is_expeditor = true;
-                file_put_contents($debug_file, "Transaction ID {$transaction['id']}: Client $client_id este expeditorul (account_id: {$transaction['account_id']})\n", FILE_APPEND);
             }
         }
         
@@ -145,40 +136,37 @@ try {
             $stmt_client = $conn->prepare("SELECT client_id FROM accounts WHERE id = ?");
             $stmt_client->execute([$transaction['destination_account_id']]);
             $dest_client = $stmt_client->fetch(PDO::FETCH_ASSOC);
-            file_put_contents($debug_file, "Transaction ID {$transaction['id']}: Destination account query result: " . print_r($dest_client, true) . "\n", FILE_APPEND);
             if ($dest_client && $dest_client['client_id'] == $client_id) {
                 $is_destinatar = true;
-                file_put_contents($debug_file, "Transaction ID {$transaction['id']}: Client $client_id este destinatarul (destination_account_id: {$transaction['destination_account_id']})\n", FILE_APPEND);
             }
         }
         
-        file_put_contents($debug_file, "Transaction ID {$transaction['id']}: Is expeditor: " . ($is_expeditor ? 'YES' : 'NO') . ", Is destinatar: " . ($is_destinatar ? 'YES' : 'NO') . "\n", FILE_APPEND);
+
         
         // Determină dacă tranzacția este de primire sau trimitere
         if ($is_expeditor && !$is_destinatar) {
             // Ești doar expeditorul - trimiti bani
             $transaction['transaction_direction'] = 'outgoing';
             $transaction['other_party'] = $transaction['destination_client_name'] ?? 'Client necunoscut';
-            file_put_contents($debug_file, "Transaction ID {$transaction['id']}: Direction: OUTGOING (trimiti bani)\n", FILE_APPEND);
+
         } elseif ($is_destinatar && !$is_expeditor) {
             // Ești doar destinatarul - primești bani
             $transaction['transaction_direction'] = 'incoming';
             $transaction['other_party'] = $transaction['source_client_name'] ?? 'Client necunoscut';
-            file_put_contents($debug_file, "Transaction ID {$transaction['id']}: Direction: INCOMING (primești bani)\n", FILE_APPEND);
+
         } elseif ($is_expeditor && $is_destinatar) {
             // Ești atât expeditor, cât și destinatar (transfer intern)
             $transaction['transaction_direction'] = 'internal';
             $transaction['other_party'] = 'Transfer intern';
-            file_put_contents($debug_file, "Transaction ID {$transaction['id']}: Direction: INTERNAL (transfer intern)\n", FILE_APPEND);
+
         } else {
             // Nu ești nici expeditor, nici destinatar
             $transaction['transaction_direction'] = 'unknown';
             $transaction['other_party'] = 'Client necunoscut';
-            file_put_contents($debug_file, "Transaction ID {$transaction['id']}: Direction: UNKNOWN (nu ești implicat)\n", FILE_APPEND);
+
         }
         
-        // Debug: logăm direcția finală
-        file_put_contents($debug_file, "Transaction ID {$transaction['id']}: FINAL DIRECTION = {$transaction['transaction_direction']}\n", FILE_APPEND);
+
         
         // Formatează statusul pentru afișare
         if ($transaction['status'] === 'completed' || $transaction['status'] === 'accepted') {
@@ -217,8 +205,8 @@ try {
     ]);
     
 } catch(PDOException $e) {
-    echo json_encode(['error' => 'Eroare de bază de date: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'error' => 'Eroare de bază de date: ' . $e->getMessage()]);
 } catch(Exception $e) {
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
 ?>

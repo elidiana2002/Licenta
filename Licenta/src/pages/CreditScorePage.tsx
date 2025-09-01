@@ -52,12 +52,17 @@ const CreditScorePage = () => {
       try {
         const parsedUser = JSON.parse(userData);
         console.log('CreditScorePage - parsed user:', parsedUser);
+        
+        // Dacă avem user data, setăm isLoggedIn și încărcăm cardurile
+        if (parsedUser && parsedUser.id) {
+          setIsLoggedIn(true);
+          console.log('CreditScorePage - User is logged in with user ID:', parsedUser.id);
+          fetchCards(parsedUser.id.toString());
+        }
       } catch (e) {
         console.log('CreditScorePage - user data is not JSON:', userData);
       }
-    }
-    
-    if (clientId) {
+    } else if (clientId) {
       setIsLoggedIn(true);
       console.log('CreditScorePage - User is logged in with client_id:', clientId);
       
@@ -90,7 +95,7 @@ const CreditScorePage = () => {
     console.log('fetchCards called with clientId:', clientId);
     setLoadingAccounts(true);
     try {
-      const response = await fetch('http://localhost/api/getAccountsByClient.php', {
+      const response = await fetch('http://localhost/api/getCardsByClient.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -229,6 +234,19 @@ const CreditScorePage = () => {
             const amount = parseFloat(transaction.amount) || 0;
             const direction = transaction.transaction_direction;
             
+            // Filtrează tranzacțiile pe card specific dacă este selectat
+            if (selectedCardId !== 'all') {
+              // Verifică dacă tranzacția aparține cardului selectat
+              const selectedCard = cards.find(card => card.card_id.toString() === selectedCardId);
+              if (selectedCard && selectedCard.account_ibans) {
+                // Verifică dacă tranzacția este asociată cu accounturile cardului
+                const cardAccountIbans = selectedCard.account_ibans.split(', ');
+                if (transaction.account_iban && !cardAccountIbans.includes(transaction.account_iban)) {
+                  return; // Sărim această tranzacție dacă nu aparține cardului
+                }
+              }
+            }
+            
             if (direction === 'incoming') {
               totalIncome += amount;
             } else if (direction === 'outgoing') {
@@ -283,6 +301,13 @@ const CreditScorePage = () => {
           setDebts(totalDebts.toFixed(2));
           setAutoDataLoaded(true);
           
+          // Calculează automat și scorul de credit
+          const incomeVal = monthlyIncome;
+          const expensesVal = monthlyExpenses;
+          const debtsVal = totalDebts;
+          const calculatedScore = incomeVal - expensesVal - (debtsVal * 2);
+          setScore(calculatedScore);
+          
           // Mesaj personalizat în funcție de selecție
           let successMessage = 'Datele au fost încărcate automat din baza de date!';
           if (selectedCardId !== 'all') {
@@ -291,7 +316,10 @@ const CreditScorePage = () => {
               successMessage = `Datele au fost încărcate pentru cardul ${selectedCard.card_number} (${selectedCard.accounts_count} account)!`;
             }
           }
-          alert(successMessage);
+          
+          // Nu mai afișăm alert-ul pentru a nu întrerupe experiența
+          console.log(successMessage);
+          console.log('Scorul de credit calculat automat:', calculatedScore);
         } else {
           alert('Nu s-au putut încărca datele: ' + (data.error || 'Eroare necunoscută'));
         }
@@ -322,16 +350,16 @@ const CreditScorePage = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <button
             onClick={fetchAutomaticData}
-            disabled={!isLoggedIn || loading || autoDataLoaded}
+            disabled={!isLoggedIn || loading}
             className="general-button"
             style={{ 
               flex: 1, 
               marginRight: '0.5rem', 
-              opacity: (isLoggedIn && !loading && !autoDataLoaded) ? 1 : 0.6,
+              opacity: (isLoggedIn && !loading) ? 1 : 0.6,
               backgroundColor: autoDataLoaded ? '#27ae60' : undefined,
               color: autoDataLoaded ? 'white' : undefined
             }}
-            title={`isLoggedIn: ${isLoggedIn}, loading: ${loading}, autoDataLoaded: ${autoDataLoaded}`}
+            title={`isLoggedIn: ${isLoggedIn}, loading: ${loading}`}
           >
             {loading ? 'Se încarcă...' : autoDataLoaded ? '✓ Date încărcate' : 'CALCUL AUTOMAT'}
           </button>
@@ -343,6 +371,8 @@ const CreditScorePage = () => {
             Resetare
           </button>
         </div>
+        
+
 
         {!isLoggedIn && (
           <p style={{ fontSize: '0.9rem', color: '#e74c3c', marginBottom: '1rem', textAlign: 'center' }}>
@@ -449,7 +479,17 @@ const CreditScorePage = () => {
             <select
               id="cardSelect"
               value={selectedCardId}
-              onChange={(e) => setSelectedCardId(e.target.value)}
+              onChange={(e) => {
+                setSelectedCardId(e.target.value);
+                // Resetează datele calculate când se schimbă selecția
+                if (autoDataLoaded) {
+                  setIncome('');
+                  setExpenses('');
+                  setDebts('');
+                  setScore(null);
+                  setAutoDataLoaded(false);
+                }
+              }}
               style={{
                 padding: '0.5rem',
                 borderRadius: '4px',
@@ -482,7 +522,17 @@ const CreditScorePage = () => {
             <select
               id="periodSelect"
               value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
+              onChange={(e) => {
+                setSelectedPeriod(e.target.value);
+                // Resetează datele calculate când se schimbă perioada
+                if (autoDataLoaded) {
+                  setIncome('');
+                  setExpenses('');
+                  setDebts('');
+                  setScore(null);
+                  setAutoDataLoaded(false);
+                }
+              }}
               style={{
                 padding: '0.5rem',
                 borderRadius: '4px',

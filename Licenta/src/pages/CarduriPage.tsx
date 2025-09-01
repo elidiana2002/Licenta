@@ -134,19 +134,31 @@ const CarduriPage: React.FC = () => {
   
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
 
-  // Fetch client id și account id din localStorage/email
+  // Fetch client id direct din localStorage (ca în ClientHistoryPage)
   useEffect(() => {
     const fetchClientData = async () => {
       const userData = localStorage.getItem('user');
-      if (!userData) return setLoading(false);
-      const parsedUser = JSON.parse(userData);
+      if (!userData) {
+        setError('Nu ești autentificat! Te rugăm să te autentifici mai întâi.');
+        setLoading(false);
+        return;
+      }
+      
       try {
-        const clientRes = await axios.post<GetClientResponse>('http://localhost/api/getClientByEmail.php', { email: parsedUser.email });
-        if (clientRes.data.success && clientRes.data.client) {
-          console.log('Setting clientId:', clientRes.data.client.id);
-          setClientId(clientRes.data.client.id);
-          
-          const accountsRes = await axios.post<GetAccountsResponse>('http://localhost/api/getAccountsByClient.php', { client_id: clientRes.data.client.id });
+        const parsedUser = JSON.parse(userData);
+        if (!parsedUser.id) {
+          setError('Nu există ID de utilizator! Te rugăm să te autentifici din nou.');
+          setLoading(false);
+          return;
+        }
+        
+        console.log('User din localStorage:', parsedUser);
+        console.log('Setting clientId:', parsedUser.id);
+        setClientId(parsedUser.id);
+        
+        // Încarcă accounturile pentru a obține datele de bază
+        try {
+          const accountsRes = await axios.post<GetAccountsResponse>('http://localhost/api/getAccountsByClient.php', { client_id: parsedUser.id });
           if (accountsRes.data.success && accountsRes.data.cards && accountsRes.data.cards.length > 0) {
             const card = accountsRes.data.cards[0];
             setAccountId(card.card_id);
@@ -156,14 +168,18 @@ const CarduriPage: React.FC = () => {
               account_type: card.card_type 
             });
           } else {
-            setError('Clientul nu are niciun cont bancar. Contactează administratorul.');
+            console.log('Nu s-au găsit accounturi:', accountsRes.data);
+            // Nu setăm eroarea aici, lăsăm să încarce cardurile
           }
-        } else {
-          setError('Nu s-a găsit clientul.');
+        } catch (accountErr) {
+          console.warn('Error fetching accounts (non-critical):', accountErr);
+          // Nu setăm eroarea aici, lăsăm să încarce cardurile
         }
+        
       } catch (err) {
-        console.error('Error fetching client data:', err);
-        setError('Eroare la conectarea cu serverul!');
+        console.error('Error parsing user data:', err);
+        setError('Eroare la procesarea datelor utilizatorului!');
+        setLoading(false);
       }
     };
     fetchClientData();
@@ -264,7 +280,7 @@ const CarduriPage: React.FC = () => {
     
     try {
       console.log('Obțin persoanele trimiși recent pentru client_id:', clientId);
-      const response = await fetch('http://localhost/api/getSavedRecipients.php', {
+              const response = await fetch('http://localhost/api/getSavedRecipients.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -287,21 +303,32 @@ const CarduriPage: React.FC = () => {
 
   // Fetch cards după ce avem clientId
   useEffect(() => {
-    if (!clientId) return;
+    console.log('useEffect fetchCards triggered, clientId:', clientId); // Debug log
+    if (!clientId) {
+      console.log('No clientId, skipping fetchCards'); // Debug log
+      return;
+    }
     const fetchCards = async () => {
+      console.log('Starting fetchCards for clientId:', clientId); // Debug log
       setLoading(true);
       try {
         // Adaugă timestamp pentru a preveni cache-ul
         const timestamp = new Date().getTime();
+        const payload = { client_id: clientId };
+        console.log('Sending request to API with payload:', payload); // Debug log
         const res = await axios.post<GetCardsResponse>(
           `http://localhost/api/getCardsByClient.php?t=${timestamp}`, 
-          { client_id: clientId }
+          payload
           // Eliminat headers-ul problematic care cauzează CORS
         );
         
         console.log('API Response:', res.data); // Debug log
+        console.log('API Response success:', res.data.success); // Debug log
+        console.log('API Response cards:', res.data.cards); // Debug log
+        console.log('API Response error:', res.data.error); // Debug log
         
         if (res.data.success) {
+          console.log('Cards found, processing...'); // Debug log
           const decryptedCards = res.data.cards.map(card => ({
             ...card,
             card_number: decryptData(card.card_number),
@@ -311,7 +338,9 @@ const CarduriPage: React.FC = () => {
           
           console.log('Decrypted cards:', decryptedCards); // Debug log
           setCards(decryptedCards);
+          setError(''); // Clear any previous errors
         } else {
+          console.log('API returned success=false, error:', res.data.error); // Debug log
           setError(res.data.error || 'Eroare la încărcare carduri');
         }
       } catch (err) {
@@ -770,7 +799,7 @@ const CarduriPage: React.FC = () => {
             const decryptedCards = cardsRes.data.cards.map(card => ({
               ...card,
               card_number: decryptData(card.card_number),
-              expiration_date: decryptData(card.expiration_date),
+              expiration_date: decryptData(card.card_number),
               cvv: decryptData(card.cvv)
             }));
             setCards(decryptedCards);
@@ -882,8 +911,15 @@ const CarduriPage: React.FC = () => {
             <div className="no-cards-message">Nu ai niciun card adăugat.</div>
           ) : (
             Object.entries(grouped).map(([bankKey, cards]) => {
-              const bankId = parseInt(bankKey.replace('bank_', ''));
-              const bankName = banks.find(b => b.id === bankId)?.name || `Banca ${bankId}`;
+              // Încearcă să găsești numele băncii din primul card
+              let bankName = 'Banca Necunoscută';
+              if (cards.length > 0 && cards[0].bank_name) {
+                bankName = cards[0].bank_name;
+              } else {
+                // Fallback la array-ul banks
+                const bankId = parseInt(bankKey.replace('bank_', ''));
+                bankName = banks.find(b => b.id === bankId)?.name || `Banca ${bankId}`;
+              }
               
               return (
                 <div key={bankKey} className="bank-section">

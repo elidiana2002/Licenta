@@ -1,4 +1,7 @@
 <?php
+// Dezactivează afișarea erorilor în output
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
 
 header('Content-Type: application/json');
 
@@ -6,9 +9,6 @@ header('Content-Type: application/json');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 header('Pragma: no-cache');
 header('Expires: 0');
-
-// Debug: să vedem dacă scriptul rulează
-error_log('=== getCardsByClient.php START ===');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -22,12 +22,8 @@ $password = '';
 
 $data = json_decode(file_get_contents('php://input'), true);
 
-// Debug: să vedem exact ce primește
-error_log('Received data: ' . print_r($data, true));
-
 if (!$data || !isset($data['client_id'])) {
-    error_log('Missing client_id in request');
-    echo json_encode(['error' => 'Date lipsă']);
+    echo json_encode(['success' => false, 'error' => 'Date lipsă']);
     exit;
 }
 
@@ -35,10 +31,7 @@ try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Debug: să vedem ce client_id primim
-    error_log('getCardsByClient.php - client_id: ' . $data['client_id']);
-
-    // Obține toate cardurile pentru client cu informațiile din accounts și banks
+    // Obține toate cardurile pentru client
     $stmt = $conn->prepare("
         SELECT 
             c.id, 
@@ -48,35 +41,28 @@ try {
             c.cvv, 
             c.status, 
             c.card_type, 
-            c.issued_at,
-            a.bank_id,
-            a.iban,
-            a.currency,
-            a.balance,
-            b.name as bank_name
+            c.issued_at
         FROM cards c
         INNER JOIN accounts a ON c.account_id = a.id
-        INNER JOIN banks b ON a.bank_id = b.id
         WHERE a.client_id = ?
+        ORDER BY c.id
     ");
     $stmt->execute([$data['client_id']]);
     $cards = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Debug: să vedem câte carduri am găsit
-    error_log('Found ' . count($cards) . ' cards for client_id: ' . $data['client_id']);
-
     // Pentru fiecare card, găsește toate accounturile asociate
     foreach ($cards as &$card) {
-        // Debug: să vedem ce card procesăm
-        error_log('Processing card ID: ' . $card['id'] . ' with account_id: ' . $card['account_id']);
+        // Adaugă proprietățile așteptate de ClientHistoryPage.tsx
+        $card['card_id'] = $card['id'];
         
-        // Găsește accounturile care au acest card_id
+        // Găsește TOATE accounturile care au acest card_id (relație prin card_id)
         $stmt = $conn->prepare("
             SELECT 
                 a.id,
                 a.iban,
                 a.balance,
                 a.currency,
+                a.bank_id,
                 b.name as bank_name,
                 a.created_at
             FROM accounts a
@@ -86,38 +72,67 @@ try {
         $stmt->execute([$card['id']]);
         $card['accounts'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Debug: să vedem câte accounturi am găsit pentru acest card
-        error_log("Card {$card['id']} - found " . count($card['accounts']) . " accounts");
-        
-        // Debug: să vedem exact ce date avem pentru fiecare account
-        foreach ($card['accounts'] as $account) {
-            error_log("Account {$account['id']} - balance: '{$account['balance']}' (type: " . gettype($account['balance']) . ")");
+        // Debug: afișează ce s-a găsit pentru fiecare card
+        error_log("Card ID " . $card['id'] . " - Found " . count($card['accounts']) . " accounts");
+        if (!empty($card['accounts'])) {
+            error_log("Account IDs: " . implode(', ', array_column($card['accounts'], 'id')));
         }
         
-        // Dacă nu s-au găsit accounturi, creează unul default cu datele din card
+        // Adaugă proprietățile așteptate
+        $card['accounts_count'] = count($card['accounts']);
+        $card['account_ibans'] = implode(', ', array_column($card['accounts'], 'iban'));
+        
+        // Dacă nu s-au găsit accounturi prin card_id, încearcă să găsești account-ul principal
         if (empty($card['accounts'])) {
-            error_log("Card {$card['id']} - no accounts found, creating default");
-            $card['accounts'] = [[
-                'id' => $card['account_id'],
-                'iban' => $card['iban'],
-                'balance' => $card['balance'] ?? 0.00,
-                'currency' => $card['currency'],
-                'bank_name' => $card['bank_name'],
-                'created_at' => $card['issued_at']
-            ]];
+            // Găsește account-ul principal al cardului
+            $stmt = $conn->prepare("
+                SELECT 
+                    a.id,
+                    a.iban,
+                    a.balance,
+                    a.currency,
+                    a.bank_id,
+                    b.name as bank_name,
+                    a.created_at
+                FROM accounts a
+                INNER JOIN banks b ON a.bank_id = b.id
+                WHERE a.id = ?
+            ");
+            $stmt->execute([$card['account_id']]);
+            $main_account = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($main_account) {
+                $card['accounts'] = [$main_account];
+                $card['accounts_count'] = 1;
+                $card['account_ibans'] = $main_account['iban'];
+                
+                // Adaugă proprietățile din account-ul principal
+                $card['bank_id'] = $main_account['bank_id'] ?? null;
+                $card['iban'] = $main_account['iban'];
+                $card['currency'] = $main_account['currency'];
+                $card['balance'] = $main_account['balance'];
+                $card['bank_name'] = $main_account['bank_name'];
+            }
+        } else {
+            // Dacă s-au găsit accounturi, folosește primul pentru proprietățile cardului
+            $first_account = $card['accounts'][0];
+            $card['bank_id'] = $first_account['bank_id'] ?? null;
+            $card['iban'] = $first_account['iban'];
+            $card['currency'] = $first_account['currency'];
+            $card['balance'] = $first_account['balance'];
+            $card['bank_name'] = $first_account['bank_name'];
         }
-        
-        // Debug: să vedem ce balance-uri avem
-        error_log("Card {$card['id']} - accounts: " . print_r($card['accounts'], true));
     }
     
     // Găsește toate accounturile pentru client care nu sunt asociate cu carduri
+    // (doar dacă există accounturi orfane - ceea ce nu ar trebui să se întâmple în cazul normal)
     $stmt = $conn->prepare("
         SELECT 
             a.id,
             a.iban,
             a.balance,
             a.currency,
+            a.bank_id,
             b.name as bank_name,
             a.created_at
         FROM accounts a
@@ -127,14 +142,43 @@ try {
     $stmt->execute([$data['client_id']]);
     $orphan_accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Debug: să vedem câte accounturi orfane am găsit
-    error_log('Found ' . count($orphan_accounts) . ' orphan accounts');
-    
-    // Adaugă accounturile orfane ca un card virtual
+    // Adaugă accounturile orfane ca un card virtual DOAR dacă există
+    // În cazul normal, toate accounturile ar trebui să aibă carduri asociate
     if (!empty($orphan_accounts)) {
-        error_log('Creating virtual card for orphan accounts');
+        error_log("WARNING: Found orphan accounts for client " . $data['client_id'] . ": " . print_r($orphan_accounts, true));
+        
+        // Găsește banca principală din accounturile orfane
+        $main_bank_id = null;
+        $main_bank_name = 'Unknown Bank';
+        
+        if (!empty($orphan_accounts)) {
+            // Grupează accounturile pe bancă și găsește banca cu cele mai multe accounturi
+            $bank_counts = [];
+            foreach ($orphan_accounts as $account) {
+                $bank_id = $account['bank_id'];
+                if (!isset($bank_counts[$bank_id])) {
+                    $bank_counts[$bank_id] = [
+                        'count' => 0,
+                        'name' => $account['bank_name']
+                    ];
+                }
+                $bank_counts[$bank_id]['count']++;
+            }
+            
+            // Găsește banca cu cele mai multe accounturi
+            $max_count = 0;
+            foreach ($bank_counts as $bank_id => $bank_info) {
+                if ($bank_info['count'] > $max_count) {
+                    $max_count = $bank_info['count'];
+                    $main_bank_id = $bank_id;
+                    $main_bank_name = $bank_info['name'];
+                }
+            }
+        }
+        
         $virtual_card = [
             'id' => 'virtual_' . time(),
+            'card_id' => 'virtual_' . time(),
             'account_id' => null,
             'card_number' => 'VIRTUAL_ACCOUNT',
             'expiration_date' => 'N/A',
@@ -142,33 +186,23 @@ try {
             'status' => 'active',
             'card_type' => 'virtual',
             'issued_at' => date('Y-m-d H:i:s'),
-            'bank_id' => $orphan_accounts[0]['bank_id'],
+            'bank_id' => $main_bank_id,
             'iban' => 'N/A',
             'currency' => 'N/A',
             'balance' => null,
-            'bank_name' => $orphan_accounts[0]['bank_name'],
-            'accounts' => $orphan_accounts
+            'bank_name' => $main_bank_name,
+            'accounts' => $orphan_accounts,
+            'accounts_count' => count($orphan_accounts),
+            'account_ibans' => implode(', ', array_column($orphan_accounts, 'iban'))
         ];
         $cards[] = $virtual_card;
     }
 
-    // Debug: să vedem rezultatul final
-    error_log('Final result - ' . count($cards) . ' cards total');
-    error_log('Final cards data: ' . print_r($cards, true));
-
     echo json_encode(['success' => true, 'cards' => $cards]);
     
-    // Debug: să vedem dacă răspunsul a fost trimis
-    error_log('Response sent successfully');
-    
 } catch(PDOException $e) {
-    error_log('PDO Exception in getCardsByClient.php: ' . $e->getMessage());
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 } catch(Exception $e) {
-    error_log('General Exception in getCardsByClient.php: ' . $e->getMessage());
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
-
-// Debug: să vedem dacă scriptul se termină normal
-error_log('=== getCardsByClient.php END ===');
 ?> 

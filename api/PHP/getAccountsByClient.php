@@ -47,19 +47,13 @@ try {
             GROUP_CONCAT(a.iban ORDER BY a.iban SEPARATOR ', ') as account_ibans,
             COUNT(a.id) as accounts_count
         FROM cards c
-        LEFT JOIN accounts a ON a.card_id = c.id
-        WHERE EXISTS (SELECT 1 FROM accounts a2 WHERE a2.client_id = ? AND a2.card_id = c.id)
+        INNER JOIN accounts a ON c.account_id = a.id
+        WHERE a.client_id = ?
         GROUP BY c.id, c.card_number, c.card_type, c.expiration_date, c.status
         ORDER BY c.id ASC");
     
-    // Debug: log the query and parameters
-    error_log("getAccountsByClient.php - Query: SELECT c.id as card_id, c.card_number, c.card_type, c.expiration_date, c.status, GROUP_CONCAT(a.iban ORDER BY a.iban SEPARATOR ', ') as account_ibans, COUNT(a.id) as accounts_count FROM cards c LEFT JOIN accounts a ON a.card_id = c.id WHERE EXISTS (SELECT 1 FROM accounts a2 WHERE a2.client_id = " . $client_id . " AND a2.card_id = c.id) GROUP BY c.id, c.card_number, c.card_type, c.expiration_date, c.status ORDER BY c.id ASC");
     $stmt->execute([$client_id]);
     $cards = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Debug: log the results
-    error_log("getAccountsByClient.php - Found " . count($cards) . " cards for client_id: " . $client_id);
-    error_log("getAccountsByClient.php - Cards data: " . print_r($cards, true));
     
     if (count($cards) === 0) {
         // Verifică dacă clientul are accounturi

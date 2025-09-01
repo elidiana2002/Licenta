@@ -34,23 +34,23 @@ INSERT INTO accounts (client_id, bank_id, iban, currency, balance, account_type)
 (5, 4, 'RO49AAAA1B31007593840005', 'USD', 2000.00, 'savings');
 
 -- 4. Populează tabelul cards
-INSERT INTO cards (account_id, card_number, expiration_date, cvv, card_type, bank_name, iban, currency) VALUES
-(1, '1234567890123456', '2026-12-01', '123', 'debit', 'Banca Transilvania', 'RO49AAAA1B31007593840000', 'RON'),
-(2, '2345678901234567', '2027-06-01', '456', 'credit', 'BCR (Banca Comercială Română)', 'RO49AAAA1B31007593840001', 'RON'),
-(3, '3456789012345678', '2026-09-01', '789', 'debit', 'Banca Transilvania', 'RO49AAAA1B31007593840002', 'EUR'),
-(4, '4567890123456789', '2027-03-01', '012', 'virtual', 'BRD – Groupe Société Générale', 'RO49AAAA1B31007593840003', 'RON'),
-(5, '5678901234567890', '2026-11-01', '345', 'debit', 'Banca Transilvania', 'RO49AAAA1B31007593840004', 'RON');
+INSERT INTO cards (account_id, card_number, expiration_date, cvv, card_type, iban, currency) VALUES
+(1, '1234567890123456', '2026-12-01', '123', 'debit', 'RO49AAAA1B31007593840000', 'RON'),
+(2, '2345678901234567', '2027-06-01', '456', 'credit', 'RO49AAAA1B31007593840001', 'RON'),
+(3, '3456789012345678', '2026-09-01', '789', 'debit', 'RO49AAAA1B31007593840002', 'EUR'),
+(4, '4567890123456789', '2027-03-01', '012', 'virtual', 'RO49AAAA1B31007593840003', 'RON'),
+(5, '5678901234567890', '2026-11-01', '345', 'debit', 'RO49AAAA1B31007593840004', 'RON');
 
--- 5. Populează tabelul transactions
-INSERT INTO transactions (card_id, amount, status, transaction_type, category, description) VALUES
-(1, 150.50, 'accepted', 'payment', 'shopping', 'Plata la supermarket'),
-(1, 75.25, 'accepted', 'payment', 'utilities', 'Factură energie electrică'),
-(2, 200.00, 'accepted', 'withdrawal', 'other', 'Retragere numerar ATM'),
-(3, 45.80, 'accepted', 'payment', 'shopping', 'Plata la farmacie'),
-(4, 1200.00, 'accepted', 'transfer', 'salary', 'Transfer salariu'),
-(5, 89.99, 'pending', 'payment', 'shopping', 'Plata online'),
-(2, 300.00, 'accepted', 'deposit', 'other', 'Depunere numerar'),
-(3, 25.50, 'rejected', 'payment', 'shopping', 'Plata respinsă - fonduri insuficiente');
+-- 5. Populează tabelul transactions (corectat să folosească account_id și să aibă transaction_direction)
+INSERT INTO transactions (account_id, amount, status, transaction_type, category, description, method) VALUES
+(1, 150.50, 'completed', 'payment', 'shopping', 'Plata la supermarket', 'POS'),
+(1, 75.25, 'completed', 'payment', 'utilities', 'Factură energie electrică', 'Online'),
+(2, 200.00, 'completed', 'withdrawal', 'other', 'Retragere numerar ATM', 'ATM'),
+(3, 45.80, 'completed', 'payment', 'shopping', 'Plata la farmacie', 'POS'),
+(4, 1200.00, 'completed', 'transfer', 'salary', 'Transfer salariu', 'IBAN'),
+(5, 89.99, 'pending', 'payment', 'shopping', 'Plata online', 'Online'),
+(2, 300.00, 'completed', 'deposit', 'other', 'Depunere numerar', 'ATM'),
+(3, 25.50, 'rejected', 'payment', 'shopping', 'Plata respinsă - fonduri insuficiente', 'POS');
 
 -- 6. Populează tabelul history
 INSERT INTO history (client_id, account_id, field_changed, old_value, new_value, changed_by) VALUES
