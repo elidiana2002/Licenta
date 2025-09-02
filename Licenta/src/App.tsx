@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import CarduriPage from './pages/CarduriPage';
+import AdminPage from './pages/AdminPage';
 import './App.css';
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/account" element={<ProfilePage />} />
             <Route path="/carduri" element={<CarduriPage />} />
+            <Route path="/admin" element={<AdminPage />} />
           </Routes>
         </div>
       </Router>

@@ -8,6 +8,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   // Simulare user logat: dacă există "user" în localStorage
   const user = localStorage.getItem('user');
+  const userData = user ? JSON.parse(user) : null;
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -33,6 +34,9 @@ const Navbar = () => {
               <Link to="/account" className="dropdown-item">Profil</Link>
               {/* <Link to="/settings" className="dropdown-item">Setări</Link> */}
               <Link to="/carduri" className="dropdown-item">Carduri</Link>
+              {userData && userData.role === 'admin' && (
+                <Link to="/admin" className="dropdown-item">Admin Panel</Link>
+              )}
               <button className="dropdown-item logout-btn" onClick={handleLogout}>Logout</button>
             </div>
           )}

@@ -86,15 +86,7 @@ const ProfilePage: React.FC = () => {
 
   if (loading) return <div className="page-container">Se încarcă...</div>;
   if (error) return <div className="page-container">Eroare: {error}</div>;
-  if (!client) return (
-    <div className="page-container">
-      <h2>Nu s-au găsit date pentru profil.</h2>
-      <p>User data: {JSON.stringify(user)}</p>
-      <p>LocalStorage user: {localStorage.getItem('user')}</p>
-      <p>Role: {user?.role}</p>
-      <p>Email: {user?.email}</p>
-    </div>
-  );
+  if (!client) return <div className="page-container">Nu s-au găsit date pentru profil.</div>;
 
   const handleEditClick = () => {
     setEditMode(true);
