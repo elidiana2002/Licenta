@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 interface Client {
@@ -41,7 +42,7 @@ const ProfilePage: React.FC = () => {
       if (userData) {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
-        if (parsedUser.role === 'user') {
+        if (parsedUser.role === 'user' || parsedUser.role === 'admin') {
           try {
                          const res = await axios.post<GetClientResponse>('http://localhost/api/getClientByEmail.php', {
               email: parsedUser.email,
@@ -73,13 +74,27 @@ const ProfilePage: React.FC = () => {
     fetchClient();
   }, []);
 
-  if (!user || user.role !== 'user') {
-    return <div className="page-container"><h2>Acces interzis!</h2></div>;
+  if (!user || (user.role !== 'user' && user.role !== 'admin')) {
+    return (
+      <div className="page-container">
+        <h2>Acces interzis!</h2>
+        <p>Trebuie să fii logat ca utilizator sau admin pentru a accesa această pagină.</p>
+        <Link to="/login">Fă login aici</Link>
+      </div>
+    );
   }
 
   if (loading) return <div className="page-container">Se încarcă...</div>;
-  if (error) return <div className="page-container">{error}</div>;
-  if (!client) return <div className="page-container">Nu s-au găsit date pentru profil.</div>;
+  if (error) return <div className="page-container">Eroare: {error}</div>;
+  if (!client) return (
+    <div className="page-container">
+      <h2>Nu s-au găsit date pentru profil.</h2>
+      <p>User data: {JSON.stringify(user)}</p>
+      <p>LocalStorage user: {localStorage.getItem('user')}</p>
+      <p>Role: {user?.role}</p>
+      <p>Email: {user?.email}</p>
+    </div>
+  );
 
   const handleEditClick = () => {
     setEditMode(true);
