@@ -1,4 +1,7 @@
 <?php
+// Dezactivează afișarea erorilor pentru a nu strica JSON-ul
+ini_set('display_errors', 0);
+error_reporting(0);
 
 header('Content-Type: application/json');
 
@@ -23,14 +26,16 @@ try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Update doar câmpurile permise (fără role)
-    $stmt = $conn->prepare("UPDATE clients SET first_name=?, last_name=?, email=?, address=?, phone=? WHERE id=?");
+    // Update toate câmpurile incluzând role și CNP
+    $stmt = $conn->prepare("UPDATE clients SET first_name=?, last_name=?, email=?, address=?, phone=?, role=?, CNP=? WHERE id=?");
     $stmt->execute([
         $data['first_name'],
         $data['last_name'],
         $data['email'],
-        $data['address'],
-        $data['phone'],
+        $data['address'] ?? '',
+        $data['phone'] ?? '',
+        $data['role'] ?? 'user',
+        $data['cnp'] ?? '',
         $data['id']
     ]);
 
@@ -41,7 +46,10 @@ try {
         $stmt2->execute([$password_hash, $data['id']]);
     }
 
-    echo json_encode(['success' => true]);
+    echo json_encode([
+        'success' => true, 
+        'message' => 'Profil actualizat cu succes'
+    ]);
 } catch(PDOException $e) {
     echo json_encode(['error' => $e->getMessage()]);
 }

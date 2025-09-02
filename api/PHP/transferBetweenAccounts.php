@@ -186,11 +186,13 @@ try {
         $stmt = $conn->prepare("INSERT INTO history (client_id, account_id, field_changed, old_value, new_value, changed_at, changed_by) VALUES (?, ?, 'transfer_in', ?, ?, NOW(), 'system')");
         $stmt->execute([$client_id, $to_account_id, $to_account['balance'], $to_account['balance'] + $amount]);
         
-        $balance_after = $updated_balance;
+        $source_balance_after = $updated_balance;
+        $destination_balance_after = $to_account['balance'] + $amount;
     } else {
         // Pentru transferuri externe, doar verifică balance-ul fără să-l modifice
         // Balance-ul va fi modificat în processTransferNotification.php când se acceptă
-        $balance_after = $from_account['balance']; // Balance-ul rămâne neschimbat pentru pending
+        $source_balance_after = $from_account['balance']; // Balance-ul rămâne neschimbat pentru pending
+        $destination_balance_after = null; // Nu se cunoaște încă pentru transferuri externe
     }
     
     // Obține destination_account_id direct (nu mai avem nevoie de destination_card_id)
@@ -235,9 +237,10 @@ try {
              method, 
              category, 
              description, 
-             balance_after, 
+             source_balance_after, 
+             destination_balance_after,
              created_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
      ");
      $stmt->execute([
          $account_id,           // 1. account_id
@@ -249,7 +252,8 @@ try {
          'IBAN',            // 7. method
          'other',            // 8. category
          $description,       // 9. description
-         $balance_after      // 10. balance_after
+         $source_balance_after,      // 10. source_balance_after
+         $destination_balance_after  // 11. destination_balance_after
      ]);
     
     // Confirmă tranzacția

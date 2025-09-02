@@ -1,6 +1,6 @@
 // src/App.tsx
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
+import Navbar from './components/Navbar.tsx';
 import HomePage from './pages/HomePage';
 import CreditScorePage from './pages/CreditScorePage';
 import ClientHistoryPage from './pages/ClientHistoryPage';

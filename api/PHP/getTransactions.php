@@ -66,8 +66,8 @@ try {
             t.method,
             t.category,
             t.description,
-            NULL as source_balance_after,
-            NULL as destination_balance_after,
+            t.source_balance_after,
+            t.destination_balance_after,
             t.created_at,
             -- Informații despre accountul sursă
             CONCAT(c1.first_name, ' ', c1.last_name) as source_client_name,
@@ -107,8 +107,11 @@ try {
         $transaction['amount_formatted'] = number_format($transaction['amount'], 2);
         
         // Formatează balance-ul după tranzacție
-        if ($transaction['balance_after'] !== null) {
-            $transaction['balance_after_formatted'] = number_format($transaction['balance_after'], 2);
+        if ($transaction['source_balance_after'] !== null) {
+            $transaction['source_balance_after_formatted'] = number_format($transaction['source_balance_after'], 2);
+        }
+        if ($transaction['destination_balance_after'] !== null) {
+            $transaction['destination_balance_after_formatted'] = number_format($transaction['destination_balance_after'], 2);
         }
         
         // Adaugă iconițe pentru tipul de tranzacție

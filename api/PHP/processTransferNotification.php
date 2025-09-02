@@ -79,9 +79,18 @@ try {
         $stmt = $conn->prepare("UPDATE accounts SET balance = balance + ? WHERE id = ?");
         $stmt->execute([$amount, $transaction['destination_account_id']]);
         
-        // Actualizează status-ul tranzacției
-        $stmt = $conn->prepare("UPDATE transactions SET status = 'accepted' WHERE id = ?");
-        $stmt->execute([$transaction_id]);
+        // Obține balance-urile actualizate
+        $stmt = $conn->prepare("SELECT balance FROM accounts WHERE id = ?");
+        $stmt->execute([$transaction['account_id']]);
+        $new_source_balance = $stmt->fetchColumn();
+        
+        $stmt = $conn->prepare("SELECT balance FROM accounts WHERE id = ?");
+        $stmt->execute([$transaction['destination_account_id']]);
+        $new_destination_balance = $stmt->fetchColumn();
+        
+        // Actualizează status-ul tranzacției și balance-urile
+        $stmt = $conn->prepare("UPDATE transactions SET status = 'accepted', source_balance_after = ?, destination_balance_after = ? WHERE id = ?");
+        $stmt->execute([$new_source_balance, $new_destination_balance, $transaction_id]);
         
         // Înregistrează în istoric - modificări reale de balance
         $stmt = $conn->prepare("
@@ -160,9 +169,18 @@ try {
         $stmt = $conn->prepare("UPDATE accounts SET balance = balance + ? WHERE id = ?");
         $stmt->execute([$amount, $transaction['account_id']]);
         
-        // Actualizează status-ul tranzacției
-        $stmt = $conn->prepare("UPDATE transactions SET status = 'returned' WHERE id = ?");
-        $stmt->execute([$transaction_id]);
+        // Obține balance-urile actualizate după return
+        $stmt = $conn->prepare("SELECT balance FROM accounts WHERE id = ?");
+        $stmt->execute([$transaction['account_id']]);
+        $new_source_balance = $stmt->fetchColumn();
+        
+        $stmt = $conn->prepare("SELECT balance FROM accounts WHERE id = ?");
+        $stmt->execute([$transaction['destination_account_id']]);
+        $new_destination_balance = $stmt->fetchColumn();
+        
+        // Actualizează status-ul tranzacției și balance-urile
+        $stmt = $conn->prepare("UPDATE transactions SET status = 'returned', source_balance_after = ?, destination_balance_after = ? WHERE id = ?");
+        $stmt->execute([$new_source_balance, $new_destination_balance, $transaction_id]);
         
                  // Înregistrează în istoric - modificări reale de balance
          $stmt = $conn->prepare("
