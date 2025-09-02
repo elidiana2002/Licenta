@@ -1,4 +1,8 @@
 <?php
+// Dezactivează afișarea erorilor pentru a nu strica JSON-ul
+ini_set('display_errors', 0);
+error_reporting(0);
+
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -62,14 +66,17 @@ try {
             t.method,
             t.category,
             t.description,
-            t.balance_after,
+            NULL as source_balance_after,
+            NULL as destination_balance_after,
             t.created_at,
             -- Informații despre accountul sursă
             CONCAT(c1.first_name, ' ', c1.last_name) as source_client_name,
             a1.currency as source_currency,
+            a1.iban as account_iban,
             -- Informații despre accountul destinație (dacă există)
             CONCAT(c2.first_name, ' ', c2.last_name) as destination_client_name,
             a2.currency as destination_currency,
+            a2.iban as destination_account_iban,
             -- Informații despre banca sursă
             b1.name as source_bank_name,
             -- Informații despre banca destinație (dacă există)

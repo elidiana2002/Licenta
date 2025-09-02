@@ -408,24 +408,7 @@ const CreditScorePage = () => {
                          <p style={{ color: '#666', margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
                Clientul nu are carduri asociate cu accounturile bancare sau există o problemă de configurare.
              </p>
-             <p style={{ color: '#999', margin: '0.5rem 0 0 0', fontSize: '0.8rem' }}>
-               Client ID: {(() => {
-                 const clientId = localStorage.getItem('client_id') || 
-                                localStorage.getItem('clientId') || 
-                                localStorage.getItem('user_id') ||
-                                localStorage.getItem('userId') ||
-                                localStorage.getItem('user');
-                 if (clientId && clientId.startsWith('{')) {
-                   try {
-                     const userData = JSON.parse(clientId);
-                     return userData.id || userData.client_id || userData.user_id || 'Unknown';
-                   } catch (e) {
-                     return 'Parse Error';
-                   }
-                 }
-                 return clientId || 'Not Found';
-               })()}
-             </p>
+
             <button 
               onClick={() => {
                 const clientId = localStorage.getItem('client_id') || 

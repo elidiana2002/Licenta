@@ -663,20 +663,44 @@ const ClientHistoryPage = () => {
                 </div>
                 
                 <div className="info-row">
+                  <span className="info-label">Account sursă:</span>
+                  <span className="info-value">
+                    {selectedTransaction.account_iban || 'N/A'}
+                  </span>
+                </div>
+                
+                <div className="info-row">
+                  <span className="info-label">Banca sursă:</span>
+                  <span className="info-value">
+                    {selectedTransaction.source_bank_name || 'N/A'}
+                  </span>
+                </div>
+                
+                <div className="info-row">
                   <span className="info-label">Data și ora:</span>
                   <span className="info-value">
                     {new Date(selectedTransaction.created_at).toLocaleDateString('ro-RO')}, {new Date(selectedTransaction.created_at).toLocaleTimeString('ro-RO')}
                   </span>
                 </div>
                 
-                {selectedTransaction.balance_after_formatted && (
-                  <div className="info-row">
-                    <span className="info-label">Sold după tranzacție:</span>
-                    <span className="info-value">
-                      {selectedTransaction.balance_after_formatted} {selectedTransaction.currency || 'RON'}
-                    </span>
-                  </div>
-                )}
+                                {/* Afișează balance-ul contului tău după tranzacție */}
+                <div className="info-row">
+                  <span className="info-label">Sold contul tău după tranzacție:</span>
+                  <span className="info-value">
+                    {(() => {
+                      // Folosește balance-ul din API dacă este disponibil
+                      if (selectedTransaction.transaction_direction === 'incoming' && selectedTransaction.destination_balance_after) {
+                        // Pentru tranzacții incoming, folosește destination_balance_after
+                        return `${parseFloat(selectedTransaction.destination_balance_after).toFixed(2)} ${selectedTransaction.currency || 'RON'}`;
+                      } else if (selectedTransaction.transaction_direction === 'outgoing' && selectedTransaction.source_balance_after) {
+                        // Pentru tranzacții outgoing, folosește source_balance_after
+                        return `${parseFloat(selectedTransaction.source_balance_after).toFixed(2)} ${selectedTransaction.currency || 'RON'}`;
+                      }
+                      
+                      return 'N/A';
+                    })()}
+                  </span>
+                </div>
               </div>
             </div>
             
