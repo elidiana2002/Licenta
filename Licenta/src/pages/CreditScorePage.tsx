@@ -211,28 +211,210 @@ const CreditScorePage = () => {
           let totalIncome = 0;
           let totalExpenses = 0;
           let totalDebts = 0;
+          let totalAccountBalance = 0;
           
-          // Calculează datoriile din balanțele accounturilor asociate cardului
+          // Calculează balance-urile totale din accounts
           if (selectedCardId === 'all') {
-            // Pentru toate cardurile, calculează datoriile totale
-            totalDebts = cards.reduce((sum, card) => {
-              // Aici ar trebui să accesăm balance-urile accounturilor asociate cardului
-              // Pentru moment, setăm o valoare default
-              return sum + 0; // Nu avem acces la balance în acest context
-            }, 0);
+            // Pentru toate cardurile, calculează balance-urile totale
+            // Vom face un request separat pentru a obține balance-urile
+            try {
+              const balanceResponse = await fetch('http://localhost/api/getAccountBalances.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ client_id: parseInt(clientId) })
+              });
+              
+              if (balanceResponse.ok) {
+                const balanceData = await balanceResponse.json();
+                console.log('Balance response:', balanceData);
+                if (balanceData.success && balanceData.accounts) {
+                  totalAccountBalance = balanceData.total_balance || 0;
+                  console.log('Total account balance:', totalAccountBalance);
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching account balances:', error);
+            }
           } else {
-            // Pentru un card specific, calculează datoriile doar pentru accounturile asociate
+            // Pentru un card specific, calculează balance-urile doar pentru accounturile asociate
             const selectedCard = cards.find(card => card.card_id.toString() === selectedCardId);
-            if (selectedCard) {
-              // Aici ar trebui să accesăm balance-urile accounturilor asociate cardului
-              totalDebts = 0; // Nu avem acces la balance în acest context
+            if (selectedCard && selectedCard.account_ibans) {
+              try {
+                const balanceResponse = await fetch('http://localhost/api/getAccountBalances.php', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ client_id: parseInt(clientId) })
+                });
+                
+                if (balanceResponse.ok) {
+                  const balanceData = await balanceResponse.json();
+                  console.log('Balance response for specific card:', balanceData);
+                  if (balanceData.success && balanceData.accounts) {
+                    const cardAccountIbans = selectedCard.account_ibans.split(', ');
+                    totalAccountBalance = balanceData.accounts
+                      .filter((account: any) => cardAccountIbans.includes(account.iban))
+                      .reduce((sum: number, account: any) => {
+                        return sum + (parseFloat(account.balance) || 0);
+                      }, 0);
+                    console.log('Card-specific account balance:', totalAccountBalance);
+                  }
+                }
+              } catch (error) {
+                console.error('Error fetching account balances for specific card:', error);
+              }
             }
           }
           
+          // Calculează veniturile din balance-urile pozitive (exclude balance-urile negative)
+          let totalIncomeFromBalances = 0;
+          if (selectedCardId === 'all') {
+            // Pentru credit score general, calculează veniturile din toate accounturile pozitive
+            try {
+              const balanceResponse = await fetch('http://localhost/api/getAccountBalances.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ client_id: parseInt(clientId) })
+              });
+              
+              if (balanceResponse.ok) {
+                const balanceData = await balanceResponse.json();
+                if (balanceData.success && balanceData.accounts) {
+                  // Calculează veniturile din balance-urile pozitive
+                  balanceData.accounts.forEach((account: any) => {
+                    const balance = parseFloat(account.balance) || 0;
+                    if (balance > 0) {
+                      totalIncomeFromBalances += balance;
+                      console.log(`Account ${account.iban} has positive balance: ${balance} (income)`);
+                    }
+                  });
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching account balances for income calculation:', error);
+            }
+            totalIncome = totalIncomeFromBalances; // Resetăm și folosim doar balance-urile pozitive
+            console.log('General credit score - using only positive account balances as income');
+          } else {
+            // Pentru card specific, calculează veniturile din balance-urile pozitive ale cardului
+            const selectedCard = cards.find(card => card.card_id.toString() === selectedCardId);
+            if (selectedCard && selectedCard.account_ibans) {
+              try {
+                const balanceResponse = await fetch('http://localhost/api/getAccountBalances.php', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ client_id: parseInt(clientId) })
+                });
+                
+                if (balanceResponse.ok) {
+                  const balanceData = await balanceResponse.json();
+                  if (balanceData.success && balanceData.accounts) {
+                    const cardAccountIbans = selectedCard.account_ibans.split(', ');
+                    balanceData.accounts
+                      .filter((account: any) => cardAccountIbans.includes(account.iban))
+                      .forEach((account: any) => {
+                        const balance = parseFloat(account.balance) || 0;
+                        if (balance > 0) {
+                          totalIncomeFromBalances += balance;
+                          console.log(`Card account ${account.iban} has positive balance: ${balance} (income)`);
+                        }
+                      });
+                  }
+                }
+              } catch (error) {
+                console.error('Error fetching account balances for card-specific income calculation:', error);
+              }
+            }
+            totalIncome += totalIncomeFromBalances; // Adăugăm balance-urile pozitive la tranzacții
+            console.log('Card-specific credit score - adding positive account balances to transaction income');
+          }
+          
+          // Calculează datoriile din balance-urile negative (carduri de credit)
+          let totalDebtsFromBalances = 0;
+          if (selectedCardId === 'all') {
+            // Pentru credit score general, calculează datoriile din toate accounturile
+            try {
+              const balanceResponse = await fetch('http://localhost/api/getAccountBalances.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ client_id: parseInt(clientId) })
+              });
+              
+              if (balanceResponse.ok) {
+                const balanceData = await balanceResponse.json();
+                if (balanceData.success && balanceData.accounts) {
+                  // Calculează datoriile din balance-urile negative
+                  balanceData.accounts.forEach((account: any) => {
+                    const balance = parseFloat(account.balance) || 0;
+                    if (balance < 0) {
+                      totalDebtsFromBalances += Math.abs(balance); // Datoria este valoarea absolută
+                      console.log(`Account ${account.iban} has negative balance: ${balance} (debt: ${Math.abs(balance)})`);
+                    }
+                  });
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching account balances for debt calculation:', error);
+            }
+          } else {
+            // Pentru card specific, calculează datoriile doar pentru accounturile asociate
+            const selectedCard = cards.find(card => card.card_id.toString() === selectedCardId);
+            if (selectedCard && selectedCard.account_ibans) {
+              try {
+                const balanceResponse = await fetch('http://localhost/api/getAccountBalances.php', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ client_id: parseInt(clientId) })
+                });
+                
+                if (balanceResponse.ok) {
+                  const balanceData = await balanceResponse.json();
+                  if (balanceData.success && balanceData.accounts) {
+                    const cardAccountIbans = selectedCard.account_ibans.split(', ');
+                    balanceData.accounts
+                      .filter((account: any) => cardAccountIbans.includes(account.iban))
+                      .forEach((account: any) => {
+                        const balance = parseFloat(account.balance) || 0;
+                        if (balance < 0) {
+                          totalDebtsFromBalances += Math.abs(balance);
+                          console.log(`Card account ${account.iban} has negative balance: ${balance} (debt: ${Math.abs(balance)})`);
+                        }
+                      });
+                  }
+                }
+              } catch (error) {
+                console.error('Error fetching account balances for card-specific debt calculation:', error);
+              }
+            }
+          }
+          
+          // Adaugă datoriile din balance-uri la datoriile totale
+          totalDebts += totalDebtsFromBalances;
+          console.log('Debt calculation:', {
+            totalDebtsFromBalances: totalDebtsFromBalances,
+            totalDebts: totalDebts
+          });
+          
+          console.log('Final income calculation:', {
+            selectedCardId: selectedCardId,
+            totalIncome: totalIncome,
+            totalIncomeFromBalances: totalIncomeFromBalances,
+            totalAccountBalance: totalAccountBalance,
+            isGeneral: selectedCardId === 'all'
+          });
+          
           // Calculează veniturile și cheltuielile din tranzacții
-          data.transactions.forEach((transaction: any) => {
+          console.log('Processing transactions:', data.transactions.length);
+          data.transactions.forEach((transaction: any, index: number) => {
             const amount = parseFloat(transaction.amount) || 0;
             const direction = transaction.transaction_direction;
+            
+            console.log(`Transaction ${index + 1}:`, {
+              id: transaction.id,
+              amount: amount,
+              direction: direction,
+              account_iban: transaction.account_iban,
+              destination_account_iban: transaction.destination_account_iban
+            });
             
             // Filtrează tranzacțiile pe card specific dacă este selectat
             if (selectedCardId !== 'all') {
@@ -242,15 +424,29 @@ const CreditScorePage = () => {
                 // Verifică dacă tranzacția este asociată cu accounturile cardului
                 const cardAccountIbans = selectedCard.account_ibans.split(', ');
                 if (transaction.account_iban && !cardAccountIbans.includes(transaction.account_iban)) {
+                  console.log(`Skipping transaction ${transaction.id} - not for selected card`);
                   return; // Sărim această tranzacție dacă nu aparține cardului
                 }
               }
             }
             
-            if (direction === 'incoming') {
-              totalIncome += amount;
-            } else if (direction === 'outgoing') {
-              totalExpenses += amount;
+            // Pentru credit score general: procesăm doar cheltuielile (outgoing)
+            // Pentru card specific: procesăm atât veniturile cât și cheltuielile
+            if (selectedCardId === 'all') {
+              // Credit Score General: doar cheltuielile
+              if (direction === 'outgoing') {
+                totalExpenses += amount;
+                console.log(`General - Added ${amount} to expenses (total: ${totalExpenses})`);
+              }
+            } else {
+              // Credit Score per Card: veniturile și cheltuielile
+              if (direction === 'incoming') {
+                totalIncome += amount;
+                console.log(`Card-specific - Added ${amount} to income (total: ${totalIncome})`);
+              } else if (direction === 'outgoing') {
+                totalExpenses += amount;
+                console.log(`Card-specific - Added ${amount} to expenses (total: ${totalExpenses})`);
+              }
             }
           });
           
@@ -292,8 +488,14 @@ const CreditScorePage = () => {
             totalDebts,
             totalIncome,
             totalExpenses,
+            totalAccountBalance,
             selectedCardId,
-            totalTransactions: data.transactions.length
+            totalTransactions: data.transactions.length,
+            breakdown: {
+              accountBalance: totalAccountBalance,
+              transactionIncome: totalIncome - totalAccountBalance,
+              transactionExpenses: totalExpenses
+            }
           });
           
           setIncome(monthlyIncome.toFixed(2));
@@ -309,11 +511,11 @@ const CreditScorePage = () => {
           setScore(calculatedScore);
           
           // Mesaj personalizat în funcție de selecție
-          let successMessage = 'Datele au fost încărcate automat din baza de date!';
+          let successMessage = `Datele au fost încărcate automat din baza de date! (Credit Score General - Venituri: ${totalIncomeFromBalances.toFixed(2)} RON, Datorii: ${totalDebtsFromBalances.toFixed(2)} RON + cheltuieli din tranzacții)`;
           if (selectedCardId !== 'all') {
             const selectedCard = cards.find(card => card.card_id.toString() === selectedCardId);
             if (selectedCard) {
-              successMessage = `Datele au fost încărcate pentru cardul ${selectedCard.card_number} (${selectedCard.accounts_count} account)!`;
+              successMessage = `Datele au fost încărcate pentru cardul ${selectedCard.card_number} (${selectedCard.accounts_count} account, Venituri: ${totalIncomeFromBalances.toFixed(2)} RON, Datorii: ${totalDebtsFromBalances.toFixed(2)} RON + toate tranzacțiile)!`;
             }
           }
           
@@ -340,6 +542,139 @@ const CreditScorePage = () => {
     if (/^\d*\.?\d*$/.test(value)) { // Acceptă doar cifre și un singur punct
       setter(value);
     }
+  };
+
+  // Funcție pentru afișarea mesajelor de ajutor/îndrumare
+  const renderCreditScoreAdvice = (score: number, income: number, expenses: number, debts: number) => {
+    const adviceStyle = {
+      padding: '1rem',
+      borderRadius: '8px',
+      marginTop: '1rem',
+      fontSize: '0.9rem',
+      lineHeight: '1.5'
+    };
+
+    // Analizează factorii care afectează credit score-ul
+    const debtToIncomeRatio = income > 0 ? (debts / income) * 100 : 0;
+    const expenseToIncomeRatio = income > 0 ? (expenses / income) * 100 : 0;
+    
+    let adviceColor = '';
+    let adviceIcon = '';
+    let adviceTitle = '';
+    let adviceMessage = '';
+    let suggestions: string[] = [];
+
+    if (score >= 1000) {
+      adviceColor = '#27ae60';
+      adviceIcon = '🎉';
+      adviceTitle = 'Excelent!';
+      adviceMessage = 'Credit score-ul tău este foarte bun!';
+      suggestions = [
+        'Menține această situație financiară stabilă',
+        'Continuă să economisești regulat',
+        'Monitorizează periodic credit score-ul'
+      ];
+    } else if (score >= 500) {
+      adviceColor = '#2ecc71';
+      adviceIcon = '👍';
+      adviceTitle = 'Bun!';
+      adviceMessage = 'Credit score-ul tău este acceptabil, dar poate fi îmbunătățit.';
+      suggestions = [
+        'Încearcă să reduci cheltuielile lunare',
+        'Economisește mai mult din venituri',
+        'Plătește datoriile existente'
+      ];
+    } else if (score >= 0) {
+      adviceColor = '#f39c12';
+      adviceIcon = '⚠️';
+      adviceTitle = 'Acceptabil';
+      adviceMessage = 'Credit score-ul tău este în limitele acceptabile, dar necesită atenție.';
+      suggestions = [
+        'Redu semnificativ cheltuielile lunare',
+        'Crește veniturile dacă este posibil',
+        'Plătește prioritariamente datoriile cu dobânzi mari',
+        'Evită noi datorii'
+      ];
+    } else {
+      adviceColor = '#e74c3c';
+      adviceIcon = '🚨';
+      adviceTitle = 'Necesită atenție!';
+      adviceMessage = 'Credit score-ul tău este scăzut și necesită acțiuni imediate.';
+      suggestions = [
+        'Redu drastic cheltuielile lunare',
+        'Plătește urgent toate datoriile',
+        'Caută surse suplimentare de venit',
+        'Consultează un specialist financiar',
+        'Evită complet noi datorii'
+      ];
+    }
+
+    // Adaugă sugestii specifice bazate pe analiza financiară
+    if (debtToIncomeRatio > 50) {
+      suggestions.push('⚠️ Datoriile reprezintă peste 50% din venituri - acest lucru afectează negativ credit score-ul');
+    }
+    
+    if (expenseToIncomeRatio > 80) {
+      suggestions.push('⚠️ Cheltuielile reprezintă peste 80% din venituri - încearcă să economisești mai mult');
+    }
+    
+    if (debts > income * 2) {
+      suggestions.push('🚨 Datoriile sunt de 2 ori mai mari decât veniturile - acest lucru este foarte riscant');
+    }
+
+    return (
+      <div style={{
+        ...adviceStyle,
+        backgroundColor: adviceColor + '15',
+        border: `2px solid ${adviceColor}`,
+        color: '#2c3e50'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          marginBottom: '0.5rem',
+          fontWeight: 'bold',
+          fontSize: '1rem'
+        }}>
+          <span style={{ marginRight: '0.5rem', fontSize: '1.2rem' }}>{adviceIcon}</span>
+          <span style={{ color: adviceColor }}>{adviceTitle}</span>
+        </div>
+        
+        <p style={{ margin: '0 0 0.5rem 0', fontWeight: '500' }}>
+          {adviceMessage}
+        </p>
+        
+        <div style={{ marginTop: '0.5rem' }}>
+          <strong style={{ color: adviceColor }}>Sugestii pentru îmbunătățire:</strong>
+          <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1.2rem' }}>
+            {suggestions.map((suggestion, index) => (
+              <li key={index} style={{ marginBottom: '0.3rem' }}>
+                {suggestion}
+              </li>
+            ))}
+          </ul>
+        </div>
+        
+        {/* Informații suplimentare despre factorii de risc */}
+        <div style={{ 
+          marginTop: '1rem', 
+          padding: '0.5rem', 
+          backgroundColor: '#ecf0f1', 
+          borderRadius: '4px',
+          fontSize: '0.8rem'
+        }}>
+          <strong>Analiza financiară:</strong>
+          <div style={{ marginTop: '0.3rem' }}>
+            • Datorii/venituri: {debtToIncomeRatio.toFixed(1)}%
+            {debtToIncomeRatio > 30 && <span style={{ color: '#e74c3c' }}> (Ridicat)</span>}
+          </div>
+          <div>
+            • Cheltuieli/venituri: {expenseToIncomeRatio.toFixed(1)}%
+            {expenseToIncomeRatio > 70 && <span style={{ color: '#e74c3c' }}> (Ridicat)</span>}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -382,7 +717,7 @@ const CreditScorePage = () => {
         
         {autoDataLoaded && (
           <p style={{ fontSize: '0.9rem', color: '#27ae60', marginBottom: '1rem', textAlign: 'center' }}>
-            ✓ Datele au fost încărcate automat din baza de date
+            ✓ Datele au fost încărcate automat din baza de date (Balance pozitive = venituri, Balance negative = datorii)
           </p>
         )}
 
@@ -565,8 +900,13 @@ const CreditScorePage = () => {
         </form>
 
         {score !== null && (
-          <div style={{ marginTop: "1.5rem", fontSize: "1.5rem", color: "#2a2a2a" }}>
-            Scorul tău este: {score}
+          <div style={{ marginTop: "1.5rem" }}>
+            <div style={{ fontSize: "1.5rem", color: "#2a2a2a", marginBottom: "1rem" }}>
+              Scorul tău este: {score}
+            </div>
+            
+            {/* Mesaj de ajutor/îndrumare */}
+            {renderCreditScoreAdvice(score, parseFloat(income) || 0, parseFloat(expenses) || 0, parseFloat(debts) || 0)}
           </div>
         )}
       </div>

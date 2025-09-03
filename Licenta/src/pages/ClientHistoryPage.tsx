@@ -290,53 +290,34 @@ const ClientHistoryPage = () => {
 
   // Filtrare tranzacții
   const filteredTransactions = transactions.filter((t) => {
-    // Debug pentru tranzacția 41
-    if (t.id === 41) {
-      console.log('=== DEBUG TRANZACȚIA 41 ===');
-      console.log('Filter:', filter);
-      console.log('Selected card ID:', selectedCardId);
-      console.log('Selected account IBAN:', selectedAccountIban);
-      console.log('Transaction account_iban:', t.account_iban);
-      console.log('Transaction destination_account_iban:', t.destination_account_iban);
-    }
-    
     // Filtrare după status
     if (filter !== 'all') {
       if (filter === 'completed' || filter === 'accepted') {
         if (!(t.status === 'completed' || t.status === 'accepted')) {
-          if (t.id === 41) console.log('❌ Filtrare status: respins');
           return false;
         }
       } else if (filter === 'cancelled') {
         if (t.status !== 'cancelled') {
-          if (t.id === 41) console.log('❌ Filtrare status: respins');
           return false;
         }
       } else if (t.status !== filter) {
-        if (t.id === 41) console.log('❌ Filtrare status: respins');
         return false;
       }
     }
-    if (t.id === 41) console.log('✅ Filtrare status: trecut');
     
     // Filtrare după card
     if (selectedCardId !== 'all') {
       const selectedCard = cards.find(card => card.card_id.toString() === selectedCardId);
       if (selectedCard && selectedCard.account_ibans) {
         const cardAccountIbans = selectedCard.account_ibans.split(', ');
-        if (t.id === 41) {
-          console.log('Selected card account IBANs:', cardAccountIbans);
-        }
         // Verifică dacă tranzacția aparține unuia din accounturile cardului (sursă sau destinație)
         const belongsToCard = (t.account_iban && cardAccountIbans.includes(t.account_iban)) ||
                               (t.destination_account_iban && cardAccountIbans.includes(t.destination_account_iban));
         if (!belongsToCard) {
-          if (t.id === 41) console.log('❌ Filtrare card: respins');
           return false;
         }
       }
     }
-    if (t.id === 41) console.log('✅ Filtrare card: trecut');
     
     // Filtrare după account specific
     if (selectedAccountIban !== 'all') {
@@ -344,30 +325,14 @@ const ClientHistoryPage = () => {
       const belongsToAccount = (t.account_iban === selectedAccountIban) ||
                               (t.destination_account_iban === selectedAccountIban);
       if (!belongsToAccount) {
-        if (t.id === 41) console.log('❌ Filtrare account: respins');
         return false;
       }
     }
-    if (t.id === 41) console.log('✅ Filtrare account: trecut');
     
-    if (t.id === 41) console.log('✅ TRANZACȚIA 41 TRECUTĂ PRIN TOATE FILTRELE');
     return true;
   });
       
-  // Debug: verificăm tranzacțiile după filtrare
-  console.log('Filter curent:', filter);
-  console.log('Selected card ID:', selectedCardId);
-  console.log('Selected account IBAN:', selectedAccountIban);
-  console.log('Cards available:', cards);
-  console.log('Tranzacții după filtrare:', filteredTransactions);
-  console.log('Status-uri după filtrare:', filteredTransactions.map((t: any) => ({ id: t.id, status: t.status, status_display: t.status_display })));
-  
-  // Debug specific pentru tranzacția 41
-  const transaction41 = transactions.find(t => t.id === 41);
-  if (transaction41) {
-    console.log('Tranzacția 41 înainte de filtrare:', transaction41);
-    console.log('Tranzacția 41 după filtrare:', filteredTransactions.find(t => t.id === 41));
-  }
+
 
   // Sortare tranzacții
   const sortedTransactions = [...filteredTransactions].sort((a, b) => {
