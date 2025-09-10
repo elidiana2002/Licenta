@@ -77,16 +77,16 @@ const ProfilePage: React.FC = () => {
   if (!user || (user.role !== 'user' && user.role !== 'admin')) {
     return (
       <div className="page-container">
-        <h2>Acces interzis!</h2>
+        <h2>🚫 Acces interzis!</h2>
         <p>Trebuie să fii logat ca utilizator sau admin pentru a accesa această pagină.</p>
-        <Link to="/login">Fă login aici</Link>
+        <Link to="/login">🔐 Fă login aici</Link>
       </div>
     );
   }
 
-  if (loading) return <div className="page-container">Se încarcă...</div>;
-  if (error) return <div className="page-container">Eroare: {error}</div>;
-  if (!client) return <div className="page-container">Nu s-au găsit date pentru profil.</div>;
+  if (loading) return <div className="page-container">⏳ Se încarcă profilul...</div>;
+  if (error) return <div className="page-container">❌ Eroare: {error}</div>;
+  if (!client) return <div className="page-container">👤 Nu s-au găsit date pentru profil.</div>;
 
   const handleEditClick = () => {
     setEditMode(true);
@@ -133,67 +133,38 @@ const ProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="page-container" style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      minHeight: '100vh',
-      justifyContent: 'flex-start',
-    }}>
-      <div className="card" style={{
-        maxWidth: 600,
-        margin: '0 auto',
-        padding: 32,
-        borderRadius: 16,
-        boxShadow: '0 4px 24px #0002',
-        background: '#fff',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-      }}>
-        <h2 style={{ textAlign: 'center', marginBottom: 18, fontSize: 30, fontWeight: 700, letterSpacing: 1 }}>Profilul meu</h2>
+    <div className="page-container profile-page-container">
+      <div className="card profile-card">
+        <h2 className="profile-title">👤 Profilul meu</h2>
         {((saveError && !editMode) || (saveSuccess && !editMode)) && (
-          <div style={{
-            marginBottom: 24,
-            padding: '12px 20px',
-            borderRadius: 8,
-            fontSize: 18,
-            fontWeight: 500,
-            textAlign: 'center',
-            color: saveError ? '#b00020' : '#1b5e20',
-            background: saveError ? '#ffeaea' : '#eaffea',
-            border: `1px solid ${saveError ? '#b00020' : '#1b5e20'}`,
-            boxShadow: '0 2px 8px #0001',
-            maxWidth: 400,
-            width: '100%',
-          }}>
+          <div className={`profile-message ${saveError ? 'error' : 'success'}`}>
             {saveError || saveSuccess}
           </div>
         )}
         {editMode ? (
-          <form onSubmit={handleSave}>
-            <div style={{ marginBottom: 12 }}>
-              <label>Prenume:<br />
+          <form onSubmit={handleSave} className="profile-form">
+            <div className="form-group">
+              <label>Prenume:
                 <input name="first_name" value={formData.first_name} onChange={handleInputChange} required />
               </label>
             </div>
-            <div style={{ marginBottom: 12 }}>
-              <label>Nume:<br />
+            <div className="form-group">
+              <label>Nume:
                 <input name="last_name" value={formData.last_name} onChange={handleInputChange} required />
               </label>
             </div>
-            <div style={{ marginBottom: 12 }}>
-              <label>Email:<br />
+            <div className="form-group">
+              <label>Email:
                 <input name="email" type="email" value={formData.email} onChange={handleInputChange} required />
               </label>
             </div>
-            <div style={{ marginBottom: 12 }}>
-              <label>Adresă:<br />
+            <div className="form-group">
+              <label>Adresă:
                 <input name="address" value={formData.address} onChange={handleInputChange} />
               </label>
             </div>
-            <div style={{ marginBottom: 12 }}>
-              <label>Telefon:<br />
+            <div className="form-group">
+              <label>Telefon:
                 <input 
                   name="phone" 
                   type="tel"
@@ -205,47 +176,25 @@ const ProfilePage: React.FC = () => {
                 />
               </label>
             </div>
-            <div style={{ marginBottom: 12 }}>
-              <label>Parolă nouă:<br />
+            <div className="form-group">
+              <label>Parolă nouă:
                 <input name="password" type="password" value={formData.password} onChange={handleInputChange} placeholder="Lasă gol dacă nu vrei să schimbi" />
               </label>
             </div>
-            {saveError && <div style={{ color: 'red' }}>{saveError}</div>}
-            {saveSuccess && <div style={{ color: 'green' }}>{saveSuccess}</div>}
-            <button type="submit" disabled={saving} style={{
-              padding: '8px 16px',
-              background: '#ffe680',
-              border: '1px solid #ccc',
-              borderRadius: 4,
-              color: '#111',
-              fontWeight: 'bold',
-              cursor: saving ? 'not-allowed' : 'pointer',
-              transition: 'background 0.2s',
-            }}>{saving ? 'Se salvează...' : 'Salvează'}</button>
-            <button type="button" onClick={() => setEditMode(false)} style={{
-              padding: '8px 16px',
-              background: '#ffe680',
-              border: '1px solid #ccc',
-              borderRadius: 4,
-              color: '#111',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              transition: 'background 0.2s',
-            }}>Anulează</button>
+            {saveError && <div className="form-error">{saveError}</div>}
+            {saveSuccess && <div className="form-success">{saveSuccess}</div>}
+            <div className="form-buttons">
+              <button type="submit" disabled={saving} className="save-button">
+                {saving ? '💾 Se salvează...' : '💾 Salvează'}
+              </button>
+              <button type="button" onClick={() => setEditMode(false)} className="cancel-button">
+                ❌ Anulează
+              </button>
+            </div>
           </form>
         ) : (
-          <>
-            <table style={{
-              width: '100%',
-              borderCollapse: 'separate',
-              borderSpacing: 0,
-              marginBottom: 16,
-              borderRadius: 12,
-              overflow: 'hidden',
-              fontFamily: 'Segoe UI, Arial, sans-serif',
-              fontSize: 18,
-              boxShadow: '0 2px 8px #0001',
-            }}>
+          <div className="profile-info">
+            <table className="profile-table">
               <tbody>
                 {[
                   { label: 'Prenume', value: client.first_name },
@@ -254,55 +203,18 @@ const ProfilePage: React.FC = () => {
                   { label: 'Adresă', value: client.address },
                   { label: 'Telefon', value: client.phone },
                 ].map((row, idx) => (
-                  <tr
-                    key={row.label}
-                    style={{
-                      background: idx % 2 === 0 ? '#fffbe6' : '#fff',
-                      transition: 'background 0.2s',
-                    }}
-                    onMouseOver={e => (e.currentTarget.style.background = '#ffe680')}
-                    onMouseOut={e => (e.currentTarget.style.background = idx % 2 === 0 ? '#fffbe6' : '#fff')}
-                  >
-                    <th style={{
-                      textAlign: 'left',
-                      padding: '12px 20px',
-                      background: '#ffe680',
-                      border: 'none',
-                      width: 140,
-                      fontWeight: 600,
-                      borderTopLeftRadius: idx === 0 ? 12 : 0,
-                      borderBottomLeftRadius: idx === 4 ? 12 : 0,
-                    }}>{row.label}</th>
-                    <td style={{
-                      padding: '12px 20px',
-                      border: 'none',
-                      borderTopRightRadius: idx === 0 ? 12 : 0,
-                      borderBottomRightRadius: idx === 4 ? 12 : 0,
-                      color: '#222',
-                      background: 'transparent',
-                    }}>{row.value}</td>
+                  <tr key={row.label} className={`profile-row ${idx % 2 === 0 ? 'even' : 'odd'}`}>
+                    <th className="profile-label">{row.label}</th>
+                    <td className="profile-value">{row.value}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </>
+          </div>
         )}
         {!editMode && (
-          <button
-            onClick={handleEditClick}
-            style={{
-              marginTop: 16,
-              padding: '8px 16px',
-              background: '#ffe680',
-              border: '1px solid #ccc',
-              borderRadius: 4,
-              color: '#111',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              transition: 'background 0.2s',
-            }}
-          >
-            Editează profilul
+          <button onClick={handleEditClick} className="edit-button">
+            ✏️ Editează profilul
           </button>
         )}
       </div>

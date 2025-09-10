@@ -19,11 +19,6 @@ interface Card {
   accounts?: AccountDetails[];
 }
 
-interface GetClientResponse {
-  success: boolean;
-  client?: { id: number };
-  error?: string;
-}
 
 interface GetAccountsResponse {
   success: boolean;
@@ -55,7 +50,6 @@ interface AccountDetails {
 }
 
 // Funcții de criptare/decriptare simple
-const ENCRYPTION_KEY = 'licenta2024';
 
 // TEMPORAR: Eliminăm criptarea pentru a face aplicația să funcționeze
 const encryptData = (data: string): string => {
@@ -91,7 +85,6 @@ const CarduriPage: React.FC = () => {
   const [banks, setBanks] = useState<{ id: number; name: string }[]>([]);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
-  const [accountDetails, setAccountDetails] = useState<AccountDetails | null>(null);
   const [copiedIban, setCopiedIban] = useState(false);
   const [showNewAccountForm, setShowNewAccountForm] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
@@ -107,7 +100,6 @@ const CarduriPage: React.FC = () => {
 
   // State pentru persoanele trimiși recent
   const [savedRecipients, setSavedRecipients] = useState<any[]>([]);
-  const [showSavedRecipients, setShowSavedRecipients] = useState(false);
 
   // Funcție pentru resetarea formularului de transfer
   const resetTransferForm = () => {
@@ -592,19 +584,15 @@ const CarduriPage: React.FC = () => {
       });
       
       if (res.data.success) {
-        setAccountDetails(res.data.accounts[0]); // Pentru compatibilitate, folosim primul account
         // Actualizează cardul cu accounturile
         setCards(cards.map(c => 
           c.id === card.id 
             ? { ...c, accounts: res.data.accounts }
             : c
         ));
-      } else {
-        setAccountDetails(null);
       }
     } catch (err) {
       console.error('Error fetching account details:', err);
-      setAccountDetails(null);
     }
   };
 
@@ -628,66 +616,6 @@ const CarduriPage: React.FC = () => {
     }
   };
 
-  // Editare account
-  const handleEditAccount = async (accountId: number) => {
-    const newBalance = prompt('Introduceți noul balance pentru account:');
-    if (newBalance === null || newBalance === '') return;
-    
-    const balance = parseFloat(newBalance);
-    if (isNaN(balance)) {
-      alert('Balance-ul trebuie să fie un număr valid!');
-      return;
-    }
-    
-    try {
-              const res = await axios.post<SimpleResponse>('http://localhost/api/updateAccountBalance.php', { 
-        account_id: accountId, 
-        balance: balance 
-      });
-      
-      if (res.data.success) {
-        // Actualizează cardurile cu noul balance
-        setCards(cards.map(card => {
-          // Actualizează balance-ul în card dacă este account-ul principal
-          if (card.account_id === accountId) {
-            card = { ...card, balance: Number(balance) };
-          }
-          
-          // Actualizează balance-ul în accounturile asociate
-          if (card.accounts) {
-            card.accounts = card.accounts.map(account => 
-              account.id === accountId 
-                ? { ...account, balance: Number(balance) }
-                : account
-            );
-          }
-          
-          return card;
-        }));
-        
-        alert('Balance-ul a fost actualizat cu succes!');
-        
-        // Reîmprospătează datele pentru a fi siguri
-        if (clientId) {
-          const cardsRes = await axios.post<GetCardsResponse>('http://localhost/api/getCardsByClient.php', { client_id: clientId });
-          if (cardsRes.data.success) {
-            const decryptedCards = cardsRes.data.cards.map(card => ({
-              ...card,
-              card_number: decryptData(card.card_number),
-              expiration_date: decryptData(card.expiration_date),
-              cvv: decryptData(card.cvv)
-            }));
-            setCards(decryptedCards);
-          }
-        }
-      } else {
-        alert(res.data.error || 'Eroare la actualizare!');
-      }
-    } catch (err) {
-      console.error('Error updating account:', err);
-      alert('Eroare la conectarea cu serverul!');
-    }
-  };
 
   // Toggle expandare card
   const toggleCardExpansion = (cardId: number) => {
@@ -887,7 +815,7 @@ const CarduriPage: React.FC = () => {
     <div className="page-container">
       <div className="card">
         <div className="header">
-          <h2>Carduri</h2>
+          <h2>💳 Management Carduri</h2>
           <button
             onClick={() => setShowNotifications(true)}
             className={`notification-button ${notifications.length > 0 ? 'has-notifications' : ''}`}
@@ -903,12 +831,12 @@ const CarduriPage: React.FC = () => {
         </div>
         
         {loading ? (
-          <div className="loading-message">Se încarcă...</div>
+          <div className="loading-message">⏳ Se încarcă datele...</div>
         ) : error ? (
-          <div className="error-message">{error}</div>
+          <div className="error-message">❌ {error}</div>
         ) : (
           Object.keys(grouped).length === 0 ? (
-            <div className="no-cards-message">Nu ai niciun card adăugat.</div>
+            <div className="no-cards-message">💳 Nu ai niciun card adăugat încă.</div>
           ) : (
             Object.entries(grouped).map(([bankKey, cards]) => {
               // Încearcă să găsești numele băncii din primul card
@@ -1056,7 +984,7 @@ const CarduriPage: React.FC = () => {
               setShowNewAccountForm(false);
             }
           }} className="add-card-button">
-            {showAddForm ? 'Renunță' : 'Adaugă card nou'}
+            {showAddForm ? '❌ Renunță' : '➕ Adaugă card nou'}
           </button>
           <button onClick={() => {
             setShowNewAccountForm(f => !f);
@@ -1065,7 +993,7 @@ const CarduriPage: React.FC = () => {
               setShowAddForm(false);
             }
           }} className="create-new-account-button">
-            {showNewAccountForm ? 'Renunță' : 'Creează account nou pentru card'}
+            {showNewAccountForm ? '❌ Renunță' : '🏦 Creează account nou pentru card'}
           </button>
         </div>
         

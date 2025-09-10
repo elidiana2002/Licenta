@@ -25,6 +25,139 @@
   margin-bottom: 3rem;
 }
 
+/* Responsive Admin Page */
+/* Mobile (max-width: 768px) */
+@media (max-width: 768px) {
+  .admin-page {
+    padding: 1rem;
+  }
+
+  .admin-title {
+    font-size: 1.8rem;
+    text-align: center;
+  }
+
+  .admin-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    padding: 1.5rem;
+  }
+
+  .stat-title {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-number {
+    font-size: 2rem;
+  }
+
+  .admin-table-container {
+    padding: 1rem;
+    overflow-x: auto;
+  }
+
+  .admin-table {
+    font-size: 0.8rem;
+    min-width: 600px;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 0.5rem;
+  }
+
+  .admin-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .admin-btn {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* Tablet (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .admin-page {
+    padding: 1.5rem;
+  }
+
+  .admin-title {
+    font-size: 2.2rem;
+  }
+
+  .admin-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.2rem;
+  }
+
+  .stat-card {
+    padding: 1.8rem;
+  }
+
+  .admin-table-container {
+    padding: 1.5rem;
+  }
+
+  .admin-table {
+    font-size: 0.9rem;
+  }
+}
+
+/* Extra small devices (max-width: 480px) */
+@media (max-width: 480px) {
+  .admin-page {
+    padding: 0.5rem;
+  }
+
+  .admin-title {
+    font-size: 1.5rem;
+  }
+
+  .admin-stats {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-title {
+    font-size: 0.8rem;
+  }
+
+  .stat-number {
+    font-size: 1.5rem;
+  }
+
+  .admin-table-container {
+    padding: 0.5rem;
+  }
+
+  .admin-table {
+    font-size: 0.7rem;
+    min-width: 500px;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 0.3rem;
+  }
+
+  .admin-btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
 .stat-card {
   background-color: white;
   border-radius: 12px;

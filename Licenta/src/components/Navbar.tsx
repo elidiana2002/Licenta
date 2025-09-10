@@ -19,9 +19,9 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="nav-links">
-        <Link to="/" className="nav-link">Acasă</Link>
-        <Link to="/scor" className="nav-link">Scor Credit</Link>
-        <Link to="/istoric" className="nav-link">Istoric</Link>
+        <Link to="/" className="nav-link">🏠 Acasă</Link>
+        <Link to="/scor" className="nav-link">📊 Scor Credit</Link>
+        <Link to="/istoric" className="nav-link">📈 Istoric</Link>
       </div>
       {user ? (
         <div className="profile-container" onMouseEnter={() => setDropdownOpen(true)} onMouseLeave={() => setDropdownOpen(false)}>
@@ -31,19 +31,19 @@ const Navbar = () => {
           </div>
           {dropdownOpen && (
             <div className="profile-dropdown">
-              <Link to="/account" className="dropdown-item">Profil</Link>
-              {/* <Link to="/settings" className="dropdown-item">Setări</Link> */}
-              <Link to="/carduri" className="dropdown-item">Carduri</Link>
+              <Link to="/account" className="dropdown-item">👤 Profil</Link>
+              {/* <Link to="/settings" className="dropdown-item">⚙️ Setări</Link> */}
+              <Link to="/carduri" className="dropdown-item">💳 Carduri</Link>
               {userData && userData.role === 'admin' && (
-                <Link to="/admin" className="dropdown-item">Admin Panel</Link>
+                <Link to="/admin" className="dropdown-item">🔧 Admin Panel</Link>
               )}
-              <button className="dropdown-item logout-btn" onClick={handleLogout}>Logout</button>
+              <button className="dropdown-item logout-btn" onClick={handleLogout}>🚪 Logout</button>
             </div>
           )}
         </div>
       ) : (
         <div className="login-container">
-          <Link to="/login" className="login-btn">Login</Link>
+          <Link to="/login" className="login-btn">🔐 Conectează-te</Link>
         </div>
       )}
     </nav>

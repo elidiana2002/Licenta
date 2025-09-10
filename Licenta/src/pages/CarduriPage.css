@@ -1,71 +1,70 @@
-/* Stiluri pentru pagina de carduri - consistent cu ClientHistoryPage.css */
+/* CarduriPage.css - Responsive Design */
 
 .page-container {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  justify-content: flex-start;
+  min-height: calc(100vh - 150px);
+  padding: 2rem;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .card {
-  max-width: 700px;
-  margin: 0 auto;
-  padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  background: var(--card-background);
+  padding: 2.5rem;
+  border-radius: var(--border-radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 1000px;
+  text-align: center;
+  transition: var(--transition);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
-  margin-bottom: 18px;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .header h2 {
-  text-align: center;
-  font-size: 30px;
-  font-weight: 700;
-  letter-spacing: 1px;
   margin: 0;
+  font-size: 2rem;
+  color: var(--text-primary);
 }
 
 .notification-button {
-  background: #ff6b6b;
+  background: #007bff;
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
+  padding: 0.8rem 1.5rem;
+  border-radius: 25px;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-  transition: all 0.2s;
+  gap: 0.5rem;
+}
+
+.notification-button:hover {
+  background: #0056b3;
+  transform: translateY(-2px);
 }
 
 .notification-button.has-notifications {
   background: #ff6b6b;
-}
-
-.notification-button:not(.has-notifications) {
-  background: #6c757d;
-}
-
-.notification-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  animation: pulse 2s infinite;
 }
 
 .notification-count {
-  background: white;
+  background: #fff;
   color: #ff6b6b;
   border-radius: 50%;
   width: 20px;
@@ -73,85 +72,81 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 0.8rem;
   font-weight: bold;
+  margin-left: 0.5rem;
 }
 
-.loading-message {
-  text-align: center;
-  padding: 20px;
-  color: #666;
-  font-size: 16px;
-}
-
-.error-message {
-  color: red;
-  text-align: center;
-  padding: 16px;
-  background: #ffebee;
-  border-radius: 8px;
-  border: 1px solid #ffcdd2;
-}
-
-.no-cards-message {
-  margin-bottom: 16px;
-  text-align: center;
-  color: #666;
-  font-size: 16px;
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
 .bank-section {
-  width: 100%;
-  margin-bottom: 24px;
+  margin-bottom: 2rem;
 }
 
 .bank-section h3 {
-  margin: 16px 0 8px 0;
-  color: #b8860b;
-  font-size: 18px;
-  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  text-align: left;
 }
 
 .card-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 8px;
+  margin-bottom: 1rem;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .table-header th {
-  padding: 8px;
-  border: 1px solid #eee;
-  background: #fffbe6;
+  background: var(--primary-color);
+  color: var(--text-primary);
+  padding: 1rem;
   font-weight: 600;
-  color: #333;
-  text-align: center;
+  text-align: left;
+  border: none;
 }
 
 .card-row {
-  background: #f9f9f9;
   cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.card-row.even-row {
-  background: #f9f9f9;
-}
-
-.card-row.odd-row {
-  background: white;
+  transition: background-color 0.2s ease;
 }
 
 .card-row:hover {
-  background: #f0f0f0;
+  background-color: #f8f9fa;
+}
+
+.even-row {
+  background-color: #fff;
+}
+
+.odd-row {
+  background-color: #f8f9fa;
 }
 
 .card-row td {
-  padding: 8px;
-  border: 1px solid #eee;
-  text-align: center;
+  padding: 1rem;
+  border: none;
+  vertical-align: middle;
+}
+
+.account-row {
+  background-color: #e3f2fd !important;
+}
+
+.account-row td {
+  padding: 0.8rem 1rem;
+  font-size: 0.9rem;
 }
 
 .details-cell {
+  width: 80px;
   text-align: center;
 }
 
@@ -159,359 +154,231 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 0.5rem;
 }
 
 .expand-icon {
-  font-size: 16px;
-  color: #666;
+  font-size: 1.2rem;
+  cursor: pointer;
 }
 
 .account-count {
-  font-size: 12px;
-  color: #666;
-}
-
-.card-number-cell {
-  font-family: monospace;
-  font-size: 14px;
-}
-
-.card-type-cell {
-  font-size: 14px;
-}
-
-.expiration-date-cell {
-  font-size: 14px;
-}
-
-.actions-cell {
-  text-align: center;
-}
-
-.delete-button {
-  color: #b00020;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  padding: 6px 8px;
-  border-radius: 6px;
-  transition: all 0.2s;
-  font-size: 18px;
+  background: var(--primary-color);
+  color: var(--text-primary);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  min-height: 32px;
-  margin: 0 auto;
-}
-
-.delete-button:hover {
-  background: #ffebee;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(176, 0, 32, 0.2);
-}
-
-.delete-button:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 4px rgba(176, 0, 32, 0.2);
-}
-
-.account-row {
-  background: #f0f8ff;
-  font-size: 14px;
-}
-
-.account-row td {
-  padding: 8px;
-  border: 1px solid #eee;
-  text-align: center;
+  font-size: 0.8rem;
+  font-weight: bold;
 }
 
 .account-icon {
-  color: #666;
-  font-size: 12px;
+  font-size: 1.2rem;
 }
 
 .account-details-cell {
-  color: #666;
-}
-
-.account-iban {
-  font-size: 12px;
+  font-family: monospace;
+  font-size: 0.9rem;
 }
 
 .balance-cell {
-  color: #666;
+  text-align: right;
+  font-weight: 600;
 }
 
 .balance-value {
-  font-size: 12px;
+  color: #28a745;
 }
 
 .bank-name-cell {
+  font-size: 0.9rem;
   color: #666;
 }
 
-.bank-name {
-  font-size: 12px;
+.actions-cell {
+  width: 120px;
+  text-align: center;
 }
 
 .action-buttons {
   display: flex;
-  gap: 4px;
+  gap: 0.5rem;
   justify-content: center;
 }
 
-.view-details-button {
-  color: #0066cc;
+.delete-button,
+.view-details-button,
+.transfer-button {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 3px;
-  transition: all 0.2s;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  font-size: 1.2rem;
+}
+
+.delete-button:hover {
+  background-color: #ffebee;
 }
 
 .view-details-button:hover {
-  background: #e3f2fd;
-  transform: translateY(-1px);
-}
-
-.transfer-button {
-  color: #28a745;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 3px;
-  transition: all 0.2s;
+  background-color: #e3f2fd;
 }
 
 .transfer-button:hover {
-  background: #e8f5e8;
-  transform: translateY(-1px);
+  background-color: #e8f5e8;
 }
 
 .button-container {
   display: flex;
-  gap: 12px;
-  margin-top: 12px;
-  margin-bottom: 12px;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+  flex-wrap: wrap;
 }
 
-.add-card-button {
-  padding: 8px 16px;
-  background: #ffe680;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  color: #111;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.add-card-button:hover {
-  background: #ffd54f;
-}
-
+.add-card-button,
 .create-new-account-button {
-  padding: 8px 16px;
-  background: #28a745;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  color: white;
-  font-weight: bold;
+  background: var(--primary-color);
+  color: var(--text-primary);
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
 }
 
+.add-card-button:hover,
 .create-new-account-button:hover {
-  background: #218838;
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Stiluri pentru formulare */
 .add-card-form,
 .create-new-account-form {
-  width: 100%;
-  max-width: 400px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  background: #f8f9fa;
+  padding: 2rem;
+  border-radius: 8px;
+  margin-top: 2rem;
+  text-align: left;
+}
+
+.add-card-form h3,
+.create-new-account-form h3 {
+  margin-top: 0;
+  color: var(--text-primary);
+  text-align: center;
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(249, 224, 113, 0.1);
 }
 
 .form-group-row {
   display: flex;
-  gap: 16px;
-  align-items: flex-start;
+  gap: 1rem;
 }
 
 .form-group-row .form-group {
   flex: 1;
-  min-width: 0;
-}
-
-.form-group label {
-  font-weight: bold;
-  color: #555;
-  font-size: 14px;
 }
 
 .card-number-container {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 4px;
-}
-
-.card-number-input {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 14px;
-  width: auto;
-  box-sizing: border-box;
-  background: #000;
-  color: #fff;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .chase-format-label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  color: #555;
-  white-space: nowrap;
-  cursor: pointer;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: normal;
+  margin-top: 0.5rem;
 }
 
-.chase-format-label input[type="checkbox"] {
-  margin: 0;
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
+.error-message,
+.success-message {
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-weight: 600;
 }
 
-.expiration-date-input,
-.cvv-input,
-.other-bank-input,
-.phone-number-input,
-.iban-input,
-.transfer-amount-input {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 14px;
-  width: 100%;
-  box-sizing: border-box;
-  background: #000;
-  color: #fff;
-}
-
-.card-number-input:focus,
-.expiration-date-input:focus,
-.cvv-input:focus,
-.other-bank-input:focus,
-.phone-number-input:focus,
-.iban-input:focus,
-.transfer-amount-input:focus {
-  outline: none;
-  border-color: #ffe680;
-  box-shadow: 0 0 0 2px rgba(255, 230, 128, 0.2);
-  background: #000;
-  color: #fff;
-}
-
-.bank-select,
-.select-card-for-new-account,
-.select-currency-for-new-account,
-.select-transfer-recipient {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 14px;
-  background: #000;
-  color: #fff;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.bank-select:focus,
-.select-card-for-new-account:focus,
-.select-currency-for-new-account:focus,
-.select-transfer-recipient:focus {
-  outline: none;
-  border-color: #ffe680;
-  box-shadow: 0 0 0 2px rgba(255, 230, 128, 0.2);
-  background: #000;
-  color: #fff;
-}
-
-.phone-number-hint {
-  color: #666;
-  font-size: 12px;
-  margin-top: 4px;
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
 }
 
 .success-message {
-  color: green;
-  font-size: 14px;
-  text-align: center;
-  padding: 8px;
-  background: #e8f5e8;
-  border-radius: 4px;
-  border: 1px solid #c8e6c9;
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
 }
 
-.add-card-submit-button {
-  padding: 8px 16px;
-  background: #ffe680;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  color: #111;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.add-card-submit-button:hover {
-  background: #ffd54f;
-}
-
+.add-card-submit-button,
 .create-new-account-submit-button {
-  padding: 8px 16px;
-  background: #28a745;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  color: white;
-  font-weight: bold;
+  background: var(--primary-color);
+  color: var(--text-primary);
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  width: 100%;
 }
 
+.add-card-submit-button:hover,
 .create-new-account-submit-button:hover {
-  background: #218838;
+  background: var(--primary-dark);
+  transform: translateY(-2px);
 }
 
-.create-new-account-form h3 {
+.loading-message,
+.no-cards-message {
   text-align: center;
-  margin-bottom: 16px;
-  color: #333;
-  font-size: 18px;
+  padding: 2rem;
+  color: #666;
+  font-size: 1.1rem;
 }
 
-/* Stiluri pentru modale - consistent cu ClientHistoryPage.css */
+/* Modal Styles */
 .transfer-modal-overlay,
 .account-details-modal-overlay,
 .notifications-modal-overlay {
@@ -525,35 +392,32 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 1rem;
 }
 
 .transfer-modal-content,
 .account-details-modal-content,
 .notifications-modal-content {
   background: white;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  width: 100%;
   max-width: 600px;
-  width: 90%;
-  max-height: 80vh;
+  max-height: 90vh;
   overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 1.5rem 1rem 1.5rem;
-  border-bottom: 2px solid var(--primary-color);
-  background: var(--primary-color);
-  color: #000;
-  border-radius: 15px 15px 0 0;
+  padding: 1.5rem;
+  border-bottom: 1px solid #eee;
 }
 
 .modal-header h3 {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .close-modal-button {
@@ -561,359 +425,412 @@
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #000;
   padding: 0.5rem;
-  border-radius: 50%;
-  transition: all 0.2s ease;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
 }
 
 .close-modal-button:hover {
-  background: rgba(0, 0, 0, 0.1);
+  background-color: #f8f9fa;
 }
 
-.transfer-modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+.transfer-modal-body,
+.account-details-body {
   padding: 1.5rem;
 }
 
 .from-account-details {
-  padding: 16px;
-  background-color: #f8f9fa;
+  background: #f8f9fa;
+  padding: 1rem;
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  margin-bottom: 16px;
+  margin-bottom: 1.5rem;
 }
 
 .from-account-details h4 {
-  margin: 0 0 12px 0;
-  color: #0066cc;
-  font-size: 16px;
-}
-
-.from-account-details p {
-  margin: 0;
-  color: #333;
-  font-size: 14px;
-  line-height: 1.4;
+  margin-top: 0;
+  color: var(--text-primary);
 }
 
 .transfer-options {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.transfer-options label {
-  font-weight: bold;
-  color: #555;
-  font-size: 14px;
-}
-
-.transfer-options small {
-  color: #666;
-  font-size: 12px;
-  margin-top: 4px;
+  gap: 1rem;
 }
 
 .modal-footer {
-  padding: 1rem 1.5rem 1.5rem 1.5rem;
-  text-align: center;
-  border-top: 1px solid #e9ecef;
   display: flex;
-  gap: 12px;
-  justify-content: center;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding: 1.5rem;
+  border-top: 1px solid #eee;
+}
+
+.execute-transfer-button,
+.cancel-transfer-button {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
 }
 
 .execute-transfer-button {
   background: #28a745;
   color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s;
-}
-
-.execute-transfer-button:hover {
-  background: #218838;
 }
 
 .cancel-transfer-button {
   background: #6c757d;
   color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s;
-}
-
-.cancel-transfer-button:hover {
-  background: #5a6268;
-}
-
-.account-details-body {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 1.5rem;
-}
-
-.account-details-body h4 {
-  margin: 0 0 16px 0;
-  color: #333;
-  text-align: center;
-  font-size: 18px;
 }
 
 .account-details-card {
-  border: 1px solid #e0e0e0;
+  background: #f8f9fa;
+  padding: 1.5rem;
   border-radius: 8px;
-  padding: 16px;
-  background-color: #f8f9fa;
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
 }
 
 .account-details-card h5 {
-  margin: 0 0 12px 0;
-  color: #0066cc;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 8px;
-  font-size: 16px;
+  margin-top: 0;
+  color: var(--text-primary);
 }
 
 .account-detail-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
+  margin-bottom: 0.8rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
 }
 
 .detail-label {
-  font-weight: bold;
-  color: #555;
-  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .iban-and-copy-container {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .iban-value {
   font-family: monospace;
-  font-size: 14px;
-  color: #333;
+  font-size: 0.9rem;
+  color: #666;
 }
 
 .copy-iban-button {
-  background: #007bff;
-  color: white;
+  background: var(--primary-color);
+  color: var(--text-primary);
   border: none;
-  padding: 4px 8px;
+  padding: 0.3rem 0.6rem;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 11px;
-  transition: background-color 0.2s;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.copy-iban-button:hover {
+  background: var(--primary-dark);
 }
 
 .copy-iban-button.copied {
   background: #28a745;
-}
-
-.copy-iban-button:hover {
-  background: #0056b3;
-}
-
-.balance-value {
-  font-size: 16px;
-  font-weight: bold;
-  color: #28a745;
-}
-
-.bank-name-value {
-  font-size: 14px;
-  color: #333;
-}
-
-.created-at-value {
-  font-size: 12px;
-  color: #666;
+  color: white;
 }
 
 .card-number-detail-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
-  background-color: #e8f4fd;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #e3f2fd;
   border-radius: 6px;
-  margin-top: 16px;
 }
 
 .card-number-value {
   font-family: monospace;
-  font-size: 14px;
-  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Notifications Styles */
+.no-notifications-message {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+.no-notifications-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
 }
 
 .notifications-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 1.5rem;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .notification-item {
-  border: 1px solid #e0e0e0;
+  border: 1px solid #eee;
   border-radius: 8px;
-  padding: 16px;
-  background-color: #f8f9fa;
-  margin-bottom: 16px;
-}
-
-.notification-header {
-  margin-bottom: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  background: white;
 }
 
 .notification-header h4 {
-  margin: 0 0 8px 0;
-  color: #0066cc;
-  font-size: 16px;
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
 }
 
 .notification-header p {
-  margin: 0 0 8px 0;
-  color: #333;
-  font-size: 14px;
+  margin: 0 0 1rem 0;
+  color: #666;
 }
 
 .notification-sender-info {
-  font-size: 12px;
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
   color: #666;
-  line-height: 1.4;
+  margin-bottom: 1rem;
 }
 
 .notification-amount {
-  font-size: 24px;
+  text-align: center;
+  font-size: 1.5rem;
   font-weight: bold;
   color: #28a745;
-  text-align: right;
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
 }
 
 .notification-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 16px;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.accept-notification-button,
+.reject-notification-button {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
 }
 
 .accept-notification-button {
   background: #28a745;
   color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  transition: background-color 0.2s;
-}
-
-.accept-notification-button:hover {
-  background: #218838;
 }
 
 .reject-notification-button {
   background: #dc3545;
   color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  transition: background-color 0.2s;
 }
 
-.reject-notification-button:hover {
-  background: #c82333;
-}
-
-.no-notifications-message {
-  text-align: center;
-  padding: 40px;
-  color: #666;
-}
-
-.no-notifications-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
-.no-notifications-message h4 {
-  margin: 0 0 8px 0;
-  color: #333;
-  font-size: 18px;
-}
-
-.no-notifications-message p {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
-}
-
-/* Responsive design */
+/* Responsive Design */
+/* Mobile (max-width: 768px) */
 @media (max-width: 768px) {
-  .card {
-    padding: 16px;
-    margin: 16px;
+  .page-container {
+    padding: 1rem;
+    min-height: calc(100vh - 100px);
   }
-  
+
+  .card {
+    padding: 1.5rem;
+    margin: 0;
+  }
+
   .header {
     flex-direction: column;
-    gap: 16px;
+    align-items: stretch;
+    text-align: center;
   }
-  
+
+  .header h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .notification-button {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .card-table {
+    font-size: 0.8rem;
+    overflow-x: auto;
+  }
+
+  .table-header th {
+    padding: 0.8rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .card-row td,
+  .account-row td {
+    padding: 0.6rem 0.5rem;
+  }
+
   .button-container {
     flex-direction: column;
+    align-items: stretch;
   }
-  
+
+  .add-card-button,
+  .create-new-account-button {
+    padding: 0.8rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .add-card-form,
+  .create-new-account-form {
+    padding: 1.5rem;
+  }
+
+  .form-group-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .transfer-modal-content,
+  .account-details-modal-content,
+  .notifications-modal-content {
+    margin: 0.5rem;
+    max-height: 95vh;
+  }
+
+  .modal-header {
+    padding: 1rem;
+  }
+
+  .modal-header h3 {
+    font-size: 1.2rem;
+  }
+
+  .transfer-modal-body,
+  .account-details-body {
+    padding: 1rem;
+  }
+
   .modal-footer {
     flex-direction: column;
+    padding: 1rem;
   }
-  
+
+  .execute-transfer-button,
+  .cancel-transfer-button {
+    width: 100%;
+    padding: 0.8rem;
+  }
+
+  .account-detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
   .notification-actions {
     flex-direction: column;
   }
+
+  .accept-notification-button,
+  .reject-notification-button {
+    width: 100%;
+  }
 }
 
-/* Stiluri pentru persoanele trimiși recent */
-.last-recipient-select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: #000;
-  color: #fff;
-  font-size: 14px;
-  margin-top: 8px;
+/* Tablet (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .page-container {
+    padding: 1.5rem;
+  }
+
+  .card {
+    padding: 2rem;
+  }
+
+  .header h2 {
+    font-size: 1.8rem;
+  }
+
+  .card-table {
+    font-size: 0.9rem;
+  }
+
+  .transfer-modal-content,
+  .account-details-modal-content,
+  .notifications-modal-content {
+    max-width: 500px;
+  }
 }
 
-.last-recipient-select:focus {
-  outline: none;
-  border-color: #0066cc;
-  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
-}
+/* Extra small devices (max-width: 480px) */
+@media (max-width: 480px) {
+  .page-container {
+    padding: 0.5rem;
+  }
 
-.last-recipient-hint {
-  color: #666;
-  font-size: 12px;
-  margin-top: 4px;
-  font-style: italic;
+  .card {
+    padding: 1rem;
+  }
+
+  .header h2 {
+    font-size: 1.3rem;
+  }
+
+  .notification-button {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.8rem;
+  }
+
+  .card-table {
+    font-size: 0.7rem;
+  }
+
+  .table-header th {
+    padding: 0.5rem 0.3rem;
+    font-size: 0.7rem;
+  }
+
+  .card-row td,
+  .account-row td {
+    padding: 0.4rem 0.3rem;
+  }
+
+  .add-card-form,
+  .create-new-account-form {
+    padding: 1rem;
+  }
+
+  .transfer-modal-content,
+  .account-details-modal-content,
+  .notifications-modal-content {
+    margin: 0.25rem;
+  }
+
+  .modal-header {
+    padding: 0.8rem;
+  }
+
+  .modal-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .transfer-modal-body,
+  .account-details-body {
+    padding: 0.8rem;
+  }
 }

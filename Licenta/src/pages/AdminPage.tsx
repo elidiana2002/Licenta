@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import axios from 'axios';
 import './AdminPage.css';
 
@@ -10,6 +9,9 @@ interface User {
   email: string;
   role: string;
   created_at: string;
+  cnp?: string;
+  address?: string;
+  phone?: string;
 }
 
 interface AdminStats {
@@ -72,17 +74,19 @@ const AdminPage: React.FC = () => {
 
         // Încarcă utilizatorii
         const usersResponse = await axios.get('http://localhost/api/getUsers.php');
-        if (usersResponse.data.success) {
-          setUsers(usersResponse.data.users);
-          setStats(prev => ({ ...prev, users: usersResponse.data.users.length }));
+        const usersData = usersResponse.data as { success: boolean; users: User[] };
+        if (usersData.success) {
+          setUsers(usersData.users);
+          setStats(prev => ({ ...prev, users: usersData.users.length }));
         }
 
         // Încarcă conturile
         try {
           const accountsResponse = await axios.get('http://localhost/api/getAllAccounts.php');
-          if (accountsResponse.data.success) {
-            setAccounts(accountsResponse.data.accounts || []);
-            setStats(prev => ({ ...prev, accounts: accountsResponse.data.accounts.length }));
+          const accountsData = accountsResponse.data as { success: boolean; accounts: any[] };
+          if (accountsData.success) {
+            setAccounts(accountsData.accounts || []);
+            setStats(prev => ({ ...prev, accounts: accountsData.accounts.length }));
           }
         } catch (err) {
           console.log('Nu s-au putut încărca conturile:', err);
@@ -92,9 +96,10 @@ const AdminPage: React.FC = () => {
         // Încarcă tranzacțiile
         try {
           const transactionsResponse = await axios.get('http://localhost/api/getAllTransactions.php');
-          if (transactionsResponse.data.success) {
-            setTransactions(transactionsResponse.data.transactions || []);
-            setStats(prev => ({ ...prev, transactions: transactionsResponse.data.transactions.length }));
+          const transactionsData = transactionsResponse.data as { success: boolean; transactions: any[] };
+          if (transactionsData.success) {
+            setTransactions(transactionsData.transactions || []);
+            setStats(prev => ({ ...prev, transactions: transactionsData.transactions.length }));
           }
         } catch (err) {
           console.log('Nu s-au putut încărca tranzacțiile:', err);
@@ -104,9 +109,10 @@ const AdminPage: React.FC = () => {
         // Încarcă cardurile
         try {
           const cardsResponse = await axios.get('http://localhost/api/getAllCards.php');
-          if (cardsResponse.data.success) {
-            setCards(cardsResponse.data.cards || []);
-            setStats(prev => ({ ...prev, cards: cardsResponse.data.cards.length }));
+          const cardsData = cardsResponse.data as { success: boolean; cards: any[] };
+          if (cardsData.success) {
+            setCards(cardsData.cards || []);
+            setStats(prev => ({ ...prev, cards: cardsData.cards.length }));
           }
         } catch (err) {
           console.log('Nu s-au putut încărca cardurile:', err);
@@ -126,7 +132,7 @@ const AdminPage: React.FC = () => {
   if (loading) {
     return (
       <div className="loading-container">
-        Se încarcă...
+        ⏳ Se încarcă datele...
       </div>
     );
   }
@@ -134,7 +140,7 @@ const AdminPage: React.FC = () => {
   if (error) {
     return (
       <div className="error-container">
-        {error}
+        ❌ {error}
       </div>
     );
   }
@@ -178,7 +184,8 @@ const AdminPage: React.FC = () => {
         phone: editForm.phone
       });
 
-      if (response.data.success) {
+      const responseData = response.data as { success: boolean; error?: string };
+      if (responseData.success) {
         // Actualizează lista de utilizatori
         setUsers(users.map(user => 
           user.id === editingUser.id 
@@ -195,7 +202,7 @@ const AdminPage: React.FC = () => {
           setSaveMessage('');
         }, 1500);
       } else {
-        setSaveMessage('Eroare la actualizarea utilizatorului: ' + (response.data.error || 'Eroare necunoscută'));
+        setSaveMessage('Eroare la actualizarea utilizatorului: ' + (responseData.error || 'Eroare necunoscută'));
       }
     } catch (err) {
       console.error('Eroare la actualizarea utilizatorului:', err);
@@ -240,7 +247,8 @@ const AdminPage: React.FC = () => {
         cvv: editCardForm.cvv
       });
 
-      if (response.data.success) {
+      const responseData = response.data as { success: boolean; error?: string };
+      if (responseData.success) {
         // Actualizează lista de carduri
         setCards(cards.map(card =>
           card.id === editingCard.id
@@ -257,7 +265,7 @@ const AdminPage: React.FC = () => {
           setSaveMessage('');
         }, 1500);
       } else {
-        setSaveMessage('Eroare la actualizarea cardului: ' + (response.data.error || 'Eroare necunoscută'));
+        setSaveMessage('Eroare la actualizarea cardului: ' + (responseData.error || 'Eroare necunoscută'));
       }
     } catch (err) {
       console.error('Eroare la actualizarea cardului:', err);
@@ -320,21 +328,22 @@ const AdminPage: React.FC = () => {
       setSaveMessage('Se creează backup-ul bazei de date...');
 
       const response = await axios.post('http://localhost/api/backupDatabase.php');
+      const responseData = response.data as { success: boolean; error?: string; backupFile?: string };
       
-      if (response.data.success) {
+      if (responseData.success) {
         setSaveMessage('Backup-ul bazei de date a fost creat cu succes!');
         
         // Descarcă fișierul de backup dacă există
-        if (response.data.backupFile) {
+        if (responseData.backupFile) {
           const link = document.createElement('a');
-          link.href = `http://localhost/api/backups/${response.data.backupFile}`;
-          link.download = response.data.backupFile;
+          link.href = `http://localhost/api/backups/${responseData.backupFile}`;
+          link.download = responseData.backupFile;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
         }
       } else {
-        setSaveMessage('Eroare la crearea backup-ului: ' + (response.data.error || 'Eroare necunoscută'));
+        setSaveMessage('Eroare la crearea backup-ului: ' + (responseData.error || 'Eroare necunoscută'));
       }
       
       setTimeout(() => setSaveMessage(''), 3000);
@@ -635,7 +644,7 @@ const AdminPage: React.FC = () => {
       {/* Header cu titlu */}
       <div className="admin-header">
         <h1 className="admin-title">
-          Admin Panel
+          🔧 Admin Panel
         </h1>
       </div>
 
@@ -646,7 +655,7 @@ const AdminPage: React.FC = () => {
           onClick={() => handleFilterClick('all')}
           style={{ cursor: 'pointer' }}
         >
-          <h3 className="stat-title">Utilizatori</h3>
+          <h3 className="stat-title">👥 Utilizatori</h3>
           <div className="stat-number stat-number-yellow">
             {stats.users}
           </div>
@@ -657,7 +666,7 @@ const AdminPage: React.FC = () => {
           onClick={() => handleFilterClick('accounts')}
           style={{ cursor: 'pointer' }}
         >
-          <h3 className="stat-title">Conturi</h3>
+          <h3 className="stat-title">🏦 Conturi</h3>
           <div className="stat-number stat-number-green">
             {stats.accounts}
           </div>
@@ -668,7 +677,7 @@ const AdminPage: React.FC = () => {
           onClick={() => handleFilterClick('transactions')}
           style={{ cursor: 'pointer' }}
         >
-          <h3 className="stat-title">Tranzacții</h3>
+          <h3 className="stat-title">💸 Tranzacții</h3>
           <div className="stat-number stat-number-blue">
             {stats.transactions}
           </div>
@@ -679,7 +688,7 @@ const AdminPage: React.FC = () => {
           onClick={() => handleFilterClick('cards')}
           style={{ cursor: 'pointer' }}
         >
-          <h3 className="stat-title">Carduri</h3>
+          <h3 className="stat-title">💳 Carduri</h3>
           <div className="stat-number stat-number-orange">
             {stats.cards}
           </div>
@@ -887,7 +896,7 @@ const AdminPage: React.FC = () => {
           onClick={handleExportData}
           disabled={saving}
         >
-          {saving && saveMessage.includes('export') ? 'Se exportă...' : 'Export Date'}
+          {saving && saveMessage.includes('export') ? '📤 Se exportă...' : '📤 Export Date'}
         </button>
 
         <button 
@@ -895,7 +904,7 @@ const AdminPage: React.FC = () => {
           onClick={handleBackupDatabase}
           disabled={saving}
         >
-          {saving && saveMessage.includes('backup') ? 'Se creează backup...' : 'Backup Baza de Date'}
+          {saving && saveMessage.includes('backup') ? '💾 Se creează backup...' : '💾 Backup Baza de Date'}
         </button>
 
         <button 
@@ -903,7 +912,7 @@ const AdminPage: React.FC = () => {
           onClick={handleGenerateReports}
           disabled={saving}
         >
-          {saving && saveMessage.includes('rapoarte') ? 'Se generează...' : 'Rapoarte'}
+          {saving && saveMessage.includes('rapoarte') ? '📊 Se generează...' : '📊 Rapoarte'}
         </button>
       </div>
 
