@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import './ClientHistoryPage.css';
 import axios from 'axios';
+import transactionService, { Transaction, Card } from '../services/transactionService';
 
 const ClientHistoryPage = () => {
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'status' | 'account'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   
   // State pentru filtrarea după card și account
-  const [cards, setCards] = useState<any[]>([]);
+  const [cards, setCards] = useState<Card[]>([]);
   const [selectedCardId, setSelectedCardId] = useState<string>('all');
   const [selectedAccountIban, setSelectedAccountIban] = useState<string>('all');
   const [loadingCards, setLoadingCards] = useState(false);
@@ -43,28 +44,15 @@ const ClientHistoryPage = () => {
     console.log('fetchCards called with clientId:', clientId);
     setLoadingCards(true);
     try {
-              const response = await fetch('http://localhost/api/getCardsByClient.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ client_id: clientId }),
-      });
-
-      console.log('fetchCards response status:', response.status);
+      const data = await transactionService.getCardsByClient(clientId);
+      console.log('fetchCards response data:', data);
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log('fetchCards response data:', data);
-        if (data.success && data.cards) {
-          setCards(data.cards);
-          console.log('Cards loaded for filtering:', data.cards);
-          console.log('Cards count:', data.cards.length);
-        } else {
-          console.log('fetchCards failed:', data.error || 'No cards data');
-        }
+      if (data.success && data.cards) {
+        setCards(data.cards);
+        console.log('Cards loaded for filtering:', data.cards);
+        console.log('Cards count:', data.cards.length);
       } else {
-        console.log('fetchCards response not ok:', response.status);
+        console.log('fetchCards failed:', data.error || 'No cards data');
       }
     } catch (error) {
       console.error('Error loading cards:', error);
@@ -106,23 +94,12 @@ const ClientHistoryPage = () => {
         // Încarcă cardurile pentru filtrare
         await fetchCards(user.id);
         
-        // Facem cererea direct către API-ul corect
-        const response = await fetch('http://localhost/api/getTransactions.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ client_id: user.id })
-        });
+        // Folosim serviciul pentru a obține tranzacțiile
+        const data = await transactionService.getTransactions(user.id);
         
-        console.log('Response status:', response.status);
-        
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
         if (data.success) {
           console.log('Tranzacții primite de la API:', data.transactions);
-          console.log('Status-uri găsite:', data.transactions.map((t: any) => ({ id: t.id, status: t.status, status_display: t.status_display })));
+          console.log('Status-uri găsite:', data.transactions.map((t: Transaction) => ({ id: t.id, status: t.status, status_display: t.status_display })));
           setTransactions(data.transactions || []);
         } else {
           setError(data.error || 'Eroare la preluarea tranzacțiilor');
@@ -143,13 +120,8 @@ const ClientHistoryPage = () => {
   // Funcții pentru acțiunile de transfer
   const handleTransferAction = async (transactionId: number, action: 'accept' | 'reject' | 'return' | 'cancel') => {
     try {
-      const response = await fetch('http://localhost/api/processTransferNotification.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transaction_id: transactionId, action })
-      });
+      const data = await transactionService.processTransferAction(transactionId, action);
       
-      const data = await response.json();
       if (data.success) {
         // Reîncarcă tranzacțiile
         window.location.reload();
@@ -240,8 +212,8 @@ const ClientHistoryPage = () => {
       // Determină tipul de transfer pe baza datelor tranzacției originale
       let transferType: 'internal' | 'phone' | 'iban';
       let toAccountId: number | null = null;
-      let toPhone: string | null = null;
-      let toIban: string | null = null;
+      // let toPhone: string | null = null;
+      // let toIban: string | null = null;
       
       // Pentru moment, folosim doar transferuri interne deoarece nu avem recipient_phone/recipient_iban în istoric
       if (repeatTransferData.toAccountId && typeof repeatTransferData.toAccountId === 'number') {
@@ -309,7 +281,7 @@ const ClientHistoryPage = () => {
     if (selectedCardId !== 'all') {
       const selectedCard = cards.find(card => card.card_id.toString() === selectedCardId);
       if (selectedCard && selectedCard.account_ibans) {
-        const cardAccountIbans = selectedCard.account_ibans.split(', ');
+        const cardAccountIbans = selectedCard.account_ibans;
         // Verifică dacă tranzacția aparține unuia din accounturile cardului (sursă sau destinație)
         const belongsToCard = (t.account_iban && cardAccountIbans.includes(t.account_iban)) ||
                               (t.destination_account_iban && cardAccountIbans.includes(t.destination_account_iban));
@@ -344,8 +316,8 @@ const ClientHistoryPage = () => {
         bValue = new Date(b.created_at).getTime();
         break;
       case 'amount':
-        aValue = parseFloat(a.amount);
-        bValue = parseFloat(b.amount);
+        aValue = a.amount;
+        bValue = b.amount;
         break;
       case 'status':
         aValue = a.status;
@@ -437,7 +409,7 @@ const ClientHistoryPage = () => {
                 {(() => {
                   const selectedCard = cards.find(card => card.card_id.toString() === selectedCardId);
                   if (selectedCard && selectedCard.account_ibans) {
-                    return selectedCard.account_ibans.split(', ').map((iban: string) => (
+                    return selectedCard.account_ibans.map((iban: string) => (
                       <option key={iban} value={iban}>
                         🏦 {iban}
                       </option>
@@ -697,10 +669,10 @@ const ClientHistoryPage = () => {
                       // Folosește balance-ul din API dacă este disponibil
                       if (selectedTransaction.transaction_direction === 'incoming' && selectedTransaction.destination_balance_after) {
                         // Pentru tranzacții incoming, folosește destination_balance_after
-                        return `${parseFloat(selectedTransaction.destination_balance_after).toFixed(2)} ${selectedTransaction.currency || 'RON'}`;
+                        return `${selectedTransaction.destination_balance_after.toFixed(2)} ${selectedTransaction.currency || 'RON'}`;
                       } else if (selectedTransaction.transaction_direction === 'outgoing' && selectedTransaction.source_balance_after) {
                         // Pentru tranzacții outgoing, folosește source_balance_after
-                        return `${parseFloat(selectedTransaction.source_balance_after).toFixed(2)} ${selectedTransaction.currency || 'RON'}`;
+                        return `${selectedTransaction.source_balance_after.toFixed(2)} ${selectedTransaction.currency || 'RON'}`;
                       }
                       
                       return 'N/A';
