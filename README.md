@@ -140,38 +140,37 @@ Add real application screenshots to a repository folder such as `docs/screenshot
 
 Screenshots should use **synthetic demonstration data only** and must not expose personal details, real card information or authentication tokens.
 
-## 🔒 Security and limitations
 
-This application was developed as a Bachelor's Degree Project at the University of Oradea, Faculty of Electrical Engineering and Information Technology, specializing in Computer Science.
+## 🔒 Security & Academic Scope
+
+This application was developed as a **Bachelor's Degree Project** at the University of Oradea, Faculty of Electrical Engineering and Information Technology, specializing in Computer Science.
 
 The primary objective is to demonstrate full-stack web development, database management, banking operations simulation, and credit scoring algorithms rather than to provide a production-ready banking platform.
-Security Mechanisms
+
+### 🛡️ Security Mechanisms
 
 The project documentation describes several fundamental security mechanisms:
 
-    JWT Authentication – Token-based authentication for managing user sessions and accessing protected API endpoints.
+- **JWT Authentication** – Token-based authentication for managing user sessions and accessing protected API endpoints.
+- **Password Hashing (bcrypt)** – Passwords are stored as hashes rather than plaintext.
+- **Role-Based Access Control (RBAC)** – Different permission levels for users, managers, and administrators.
+- **Input Validation** – Validation of user inputs to reduce malformed requests and common security risks.
+- **Parameterized SQL Queries** – Designed to reduce the risk of SQL injection.
+- **Activity Logging** – Tracking account operations and changes for monitoring and debugging.
 
-    Password Hashing (bcrypt) – Passwords are stored as hashes rather than plaintext.
+These mechanisms are described in the project's documentation and have not been independently verified through a comprehensive security audit.
 
-    Role-Based Access Control (RBAC) – Different permission levels for users, managers, and administrators.
-
-    Input Validation – Validation of user inputs to reduce malformed requests and common security risks.
-
-    Parameterized SQL Queries – Designed to reduce the risk of SQL injection.
-
-    Activity Logging – Tracking account operations and changes for monitoring and debugging.
-
-These mechanisms are described in the project's documentation and are not independently verified through a comprehensive security audit.
-Known Limitations
+### ⚠️ Known Limitations
 
 As an academic prototype, the application does not aim to implement every security requirement expected from a real financial institution.
 
 Advanced security measures such as brute-force protection, multi-factor authentication (MFA), advanced fraud detection, and production infrastructure hardening are outside the current scope of the project.
 
 The demonstration database also includes simulated payment-card information, including card verification codes (CVV). Such information must not be retained after authorization in real payment systems. Any future production-oriented development would require redesigning this component and implementing appropriate payment security standards.
-Disclaimer
 
-This project is intended exclusively for educational, demonstration, and portfolio purposes.
+### 📌 Disclaimer
+
+**This project is intended exclusively for educational, demonstration, and portfolio purposes.**
 
 It is not connected to real banking infrastructure, does not process real financial transactions, and has not undergone a formal security audit or PCI DSS compliance assessment.
 
