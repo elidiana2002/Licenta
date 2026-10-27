@@ -142,11 +142,42 @@ Screenshots should use **synthetic demonstration data only** and must not expose
 
 ## 🔒 Security and limitations
 
-The academic documentation discusses JWT authentication, role-based access, password hashing, input validation, and SQL query parameterization. These are design and implementation topics described in the project materials, **not an independent security audit**.
+This application was developed as a Bachelor's Degree Project at the University of Oradea, Faculty of Electrical Engineering and Information Technology, specializing in Computer Science.
 
-The provided SQL export includes a `cvv` column and card security-code values. Real systems must **not retain card verification codes after authorization**; a production-grade implementation would need to eliminate this storage, use appropriate payment-provider integrations, and undergo a thorough security review.
+The primary objective is to demonstrate full-stack web development, database management, banking operations simulation, and credit scoring algorithms rather than to provide a production-ready banking platform.
+Security Mechanisms
 
-This project has not been presented here as audited, production-ready, PCI-compliant or connected to real banking services.
+The project documentation describes several fundamental security mechanisms:
+
+    JWT Authentication – Token-based authentication for managing user sessions and accessing protected API endpoints.
+
+    Password Hashing (bcrypt) – Passwords are stored as hashes rather than plaintext.
+
+    Role-Based Access Control (RBAC) – Different permission levels for users, managers, and administrators.
+
+    Input Validation – Validation of user inputs to reduce malformed requests and common security risks.
+
+    Parameterized SQL Queries – Designed to reduce the risk of SQL injection.
+
+    Activity Logging – Tracking account operations and changes for monitoring and debugging.
+
+These mechanisms are described in the project's documentation and are not independently verified through a comprehensive security audit.
+Known Limitations
+
+As an academic prototype, the application does not aim to implement every security requirement expected from a real financial institution.
+
+Advanced security measures such as brute-force protection, multi-factor authentication (MFA), advanced fraud detection, and production infrastructure hardening are outside the current scope of the project.
+
+The demonstration database also includes simulated payment-card information, including card verification codes (CVV). Such information must not be retained after authorization in real payment systems. Any future production-oriented development would require redesigning this component and implementing appropriate payment security standards.
+Disclaimer
+
+This project is intended exclusively for educational, demonstration, and portfolio purposes.
+
+It is not connected to real banking infrastructure, does not process real financial transactions, and has not undergone a formal security audit or PCI DSS compliance assessment.
+
+The application should not be deployed in a production banking environment or used to store sensitive personal or financial information without substantial security improvements.
+
+The focus of this project is on demonstrating software engineering concepts, full-stack application architecture, relational database operations, and the implementation of a simulated banking management system.
 
 ## 🗺️ Future improvements
 
