@@ -187,20 +187,47 @@ The focus of this project is on demonstrating software engineering concepts, ful
 - Expand reporting, analytics and accessibility features.
 - Prepare a secure deployment configuration for a publicly accessible demonstration.
 
-## 🎓 Academic details
 
-**Project:** *Dezvoltarea unei aplicații web pentru gestionarea creditelor bancare*  
-**Author:** Pușcaș Eli-Madian  
-**University:** University of Oradea  
-**Faculty:** Faculty of Electrical Engineering and Information Technology  
-**Program:** Computer Science (*Calculatoare*)  
-**Scientific coordinator:** Prof. Dr. Ing. Cornelia Aurora Györödi
+---
 
-The written dissertation provided with this project is dated **2025**, while the supplied presentation is labeled **2026**. Both source documents are retained as provided.
+## 🚀 Project Vision & Acknowledgments
 
-## 📄 License
+**This project is an academic demo and a starting point, not a finished banking product.**
 
-No software license has been verified for this repository. **Do not assume an open-source license solely because the source is visible on GitHub.** Add a `LICENSE` file if you want to explicitly permit reuse and distribution.
+Developed as my Bachelor's Degree Project at the **University of Oradea, Faculty of Electrical Engineering and Information Technology**, specializing in **Computer Science**, this application represents the knowledge, technical skills, creativity, and dedication I have invested throughout its development.
+
+The project explores full-stack web development, financial data management, banking operations simulation, and credit scoring through a practical application.
+
+Although it was designed primarily for educational and demonstration purposes, I believe this project has the potential to become something much greater.
+
+With enough time, continuous development, collaboration, and dedication, alongside significant improvements in security, reliability, and functionality, it could eventually evolve into a real-world application.
+
+**I see this project not as a finished product, but as the beginning of something that can continue to grow and improve.**
+
+### 🤝 Feel Free to Explore & Build Upon It
+
+Feel free to explore the code, learn from it, use it as inspiration, or build upon it for your own projects.
+
+If you decide to reuse, adapt, or develop something based on my work, I would genuinely appreciate acknowledgment of the original author.
+
+A simple mention of my name or a link to this repository would mean a lot and would recognize the time, effort, and dedication invested in creating this project.
+
+### 👨‍💻 Author
+
+**Pușcaș Eli-Madian**
+
+Bachelor's Degree in Computer Science  
+University of Oradea, Romania
+
+**GitHub:** [elidiana2002](https://github.com/elidiana2002)
+
+**Project Repository:** [Banking Management Web Application](https://github.com/elidiana2002/Licenta)
+
+---
+
+<p align="center">
+  <i>Every great project starts somewhere. This is where mine began.</i>
+</p>
 
 ---
 
