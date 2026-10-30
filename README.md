@@ -126,20 +126,119 @@ Then configure local database connectivity and the JWT secret using a local `.en
 
 > **Setup verification needed:** Add the exact working commands and required `.env` variable names once confirmed from the source code. Do not assume `npm start`, `npm run dev`, or a fixed localhost port without checking the project.
 
-## 📸 Screenshots
+## 📸 Application Screenshots
 
-Add real application screenshots to a repository folder such as `docs/screenshots/`, then replace the placeholders below:
+Explore the main screens of **FinEdu**, an academic web application for personal financial management and illustrative credit assessment. The screenshots below demonstrate the application's user interface; they do not imply production readiness.
 
-| Screen | Suggested image |
-| --- | --- |
-| Landing page | `docs/screenshots/home.png` |
-| Authentication | `docs/screenshots/login.png` |
-| Banking dashboard | `docs/screenshots/dashboard.png` |
-| Credit-score calculator | `docs/screenshots/credit-score.png` |
-| Transactions and transfers | `docs/screenshots/transactions.png` |
+### 🏠 Home Page & Mobile Layout
 
-Screenshots should use **synthetic demonstration data only** and must not expose personal details, real card information or authentication tokens.
+<table>
+  <tr>
+    <td align="center" width="70%">
+      <img src="screenshots/home.png" alt="FinEdu desktop landing page" width="680">
+      <br><sub>Desktop landing page</sub>
+    </td>
+    <td align="center" width="30%">
+      <img src="screenshots/mobile-home.png" alt="FinEdu mobile landing page" width="240">
+      <br><sub>Mobile layout</sub>
+    </td>
+  </tr>
+</table>
 
+### 📊 Financial Dashboard
+
+An overview of account balances, financial indicators, and recent activity.
+
+<p align="center">
+  <img src="screenshots/dashboard-overview.png" alt="FinEdu financial dashboard overview" width="900">
+</p>
+
+<details>
+<summary>View the full dashboard</summary>
+
+<img src="screenshots/dashboard-full.png" alt="Full-length financial dashboard" width="500">
+
+</details>
+
+### 🧮 Credit Score Calculator
+
+A demonstration of the application's simplified, rule-based financial indicator. **The result is illustrative and is not a real banking credit score.**
+
+<p align="center">
+  <img src="screenshots/credit-score-result.png" alt="Credit score calculator with an example result" width="900">
+</p>
+
+<details>
+<summary>View the credit score form</summary>
+
+<img src="screenshots/credit-score-form.png" alt="Credit score input form" width="850">
+
+</details>
+
+### 💳 Card Management
+
+View and manage simulated bank cards through the application interface.
+
+<p align="center">
+  <img src="screenshots/card-management.png" alt="Bank card management interface" width="900">
+</p>
+
+<details>
+<summary>More card management screens</summary>
+
+**Card management details**
+
+<img src="screenshots/card-management-details.png" alt="Card management details" width="850">
+
+**Card action dialog**
+
+<img src="screenshots/card-action-modal.png" alt="Card action dialog" width="850">
+
+**Card action confirmation**
+
+<img src="screenshots/card-action-confirmation.png" alt="Card action confirmation dialog" width="850">
+
+</details>
+
+### 📜 Transaction History
+
+Browse simulated account activity and transaction records.
+
+<p align="center">
+  <img src="screenshots/transaction-history.png" alt="Banking transaction history table" width="900">
+</p>
+
+### 🔐 Authentication & User Profile
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="screenshots/login.png" alt="User login page" width="430">
+      <br><sub>Login</sub>
+    </td>
+    <td align="center">
+      <img src="screenshots/register.png" alt="User registration page" width="430">
+      <br><sub>Registration</sub>
+    </td>
+  </tr>
+</table>
+
+<details>
+<summary>View the user profile screen</summary>
+
+<img src="screenshots/user-profile.png" alt="User profile screen" width="850">
+
+</details>
+
+### 🛠️ Administration Panel
+
+An administrative view of application management functions.
+
+<p align="center">
+  <img src="screenshots/admin-panel.png" alt="FinEdu administration panel" width="900">
+</p>
+
+> **Privacy note:** All screenshots must contain fictional demonstration data only. Never expose real customer details, full card numbers, CVV values, passwords, authentication tokens, or other sensitive information.
 
 ## 🔒 Security & Academic Scope
 
